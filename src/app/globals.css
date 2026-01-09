@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-helvetica-neue);
+  --color-primary: #173e44;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +22,319 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-helvetica-neue),
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad de scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* Fly to cart animation */
+.flying-to-cart {
+  transform-origin: center center;
+  border-radius: 50%;
+}
+
+@keyframes shake-cart {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  50% {
+    transform: translateY(-50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cart-badge-animate {
+  animation: shake-cart 0.3s ease forwards;
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.05);
+  }
+  75% {
+    transform: translateY(4px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease-out forwards;
+}
+
+/* OrderAnimation styles */
+@keyframes expand-circle {
+  0% {
+    transform: scale(0.01);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(35);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes expand-green-from-logo {
+  0% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(50);
+    opacity: 1;
+  }
+}
+
+@keyframes simple-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-ring-animation {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.circle-animation {
+  width: 50px;
+  height: 50px;
+  aspect-ratio: 1;
+  background: white;
+  border-radius: 50%;
+  transform: scale(0.01);
+  will-change: transform;
+  animation: expand-circle 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.green-circle-from-logo {
+  width: 96px;
+  height: 96px;
+  background: rgb(34 197 94);
+  border-radius: 50%;
+  transform-origin: center center;
+  will-change: transform;
+  animation: expand-green-from-logo 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in;
+}
+
+.animate-simple-fade-in {
+  animation: simple-fade-in 0.4s ease-in forwards;
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border: 5px solid #e5e7eb;
+  border-radius: 50%;
+  animation: pulse-ring-animation 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.pulse-ring-delay-1 {
+  animation-delay: 0.6s;
+}
+
+.pulse-ring-delay-2 {
+  animation-delay: 1.2s;
+}
+
+/* Payment success animations */
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logo-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-logo-fade-in {
+  animation: logo-fade-in 0.8s ease-out forwards;
+}
+
+.animated_checkmark svg {
+  width: 100px;
+  display: block;
+  margin: 40px auto 0;
+}
+.animated_checkmark .path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+}
+.animated_checkmark .path.circle {
+  -webkit-animation: dash 0.9s ease-in-out;
+  animation: dash 0.9s ease-in-out;
+}
+.animated_checkmark .path.line {
+  stroke-dashoffset: 1000;
+  -webkit-animation: dash 0.9s 0.35s ease-in-out forwards;
+  animation: dash 0.9s 0.35s ease-in-out forwards;
+}
+.animated_checkmark .path.check {
+  stroke-dashoffset: -100;
+  -webkit-animation: dash-check 0.9s 0.35s ease-in-out forwards;
+  animation: dash-check 0.9s 0.35s ease-in-out forwards;
+}
+
+@-webkit-keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@-webkit-keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}
+@keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}
+@keyframes fadeInText {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.animate-slide-down {
+  animation: slideDown 0.5s ease-in-out forwards;
+}
+.animate-fade-out {
+  animation: fadeOut 0.5s ease-in-out forwards;
+}
+
+@layer components {
+  .myradio {
+    @apply w-4 h-4 bg-gray-100 border border-gray-300 rounded-full cursor-pointer;
+    @apply focus:outline-none;
+    @apply checked:bg-[#eab3f4] checked:border-transparent;
+    @apply appearance-none relative;
+  }
+
+  .myradio:checked::before {
+    content: "";
+    @apply absolute inset-0 m-auto w-1.5 h-1.5 bg-white rounded-full;
+  }
+}
+
+@keyframes pulse-button {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 128, 140, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 128, 140, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 128, 140, 0);
+  }
+}
+
+.animate-pulse-button {
+  animation: pulse-button 1.5s ease-out infinite;
 }
