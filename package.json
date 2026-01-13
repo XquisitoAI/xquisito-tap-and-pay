@@ -13,6 +13,7 @@
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-payment-logos": "^1.1.0",
     "react-world-flags": "^1.6.0"
   },
   "devDependencies": {

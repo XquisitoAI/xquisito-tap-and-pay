@@ -8,13 +8,14 @@ import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import { useRestaurant } from "@/app/context/RestaurantContext";
 import MenuHeader from "@/app/components/headers/MenuHeader";
 import { useSearchParams, useParams } from "next/navigation";
+import { orderService } from "@/app/services/order.service";
 
 export default function OrderPage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const { state, setTableNumber, loadTableData } = useTable();
   const { navigateWithTable } = useTableNavigation();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { restaurant, setParams } = useRestaurant();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
@@ -48,6 +49,19 @@ export default function OrderPage() {
   const handleCheckOut = async () => {
     setIsProcessingPayment(true);
     try {
+      if (!authLoading && isAuthenticated && user) {
+        // Usuario autenticado: agregar a active_users y redirigir
+        if (state.order?.order_id) {
+          await orderService.addActiveUser(state.order.order_id, user.id);
+        }
+        navigateWithTable("/payment-options");
+      } else {
+        // Invitado: redirigir a auth-selection (donde puede loggearse o poner su nombre)
+        navigateWithTable("/auth-selection");
+      }
+    } catch (error) {
+      console.error("Error adding active user:", error);
+      // Continuar con la navegación aunque falle
       if (!authLoading && isAuthenticated) {
         navigateWithTable("/payment-options");
       } else {
@@ -88,14 +102,14 @@ export default function OrderPage() {
   }, [state.tableNumber]);
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
+    <div className="min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
       <MenuHeader
         restaurant={restaurant || undefined}
         tableNumber={state.tableNumber}
       />
 
       <div className="px-4 md:px-6 lg:px-8 w-full flex-1 flex flex-col">
-        <div className="left-4 right-4 bg-gradient-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">
+        <div className="left-4 right-4 bg-linear-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">
           <div className="py-6 md:py-8 lg:py-10 px-8 md:px-10 lg:px-12 flex flex-col justify-center">
             <h1 className="font-medium text-[#e0e0e0] text-xl md:text-2xl lg:text-3xl">
               Mesa {state.tableNumber}
@@ -196,13 +210,10 @@ export default function OrderPage() {
                         </div>
                         <div className="divide-y divide-[#8e8e8e]/50">
                           {unpaidDishes.map((dish) => (
-                            <div
-                              key={dish.id}
-                              className="py-3 md:py-4 lg:py-5"
-                            >
+                            <div key={dish.id} className="py-3 md:py-4 lg:py-5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3 md:gap-4 lg:gap-5">
-                                  <div className="flex-shrink-0 mt-1">
+                                  <div className="shrink-0 mt-1">
                                     <div className="size-16 md:size-20 lg:size-24 bg-gray-300 rounded-sm md:rounded-md flex items-center justify-center hover:scale-105 transition-transform duration-200">
                                       <img
                                         src={
@@ -219,14 +230,27 @@ export default function OrderPage() {
                                       {dish.item}
                                     </h4>
                                     {dish.custom_fields &&
-                                      Object.keys(dish.custom_fields).length >
-                                        0 && (
+                                      dish.custom_fields.length > 0 && (
                                         <div className="text-xs md:text-sm lg:text-base text-gray-400 space-y-0.5">
-                                          {Object.entries(dish.custom_fields).map(
-                                            ([key, value]) => (
-                                              <p key={key}>
-                                                {key}: {String(value)}
-                                              </p>
+                                          {dish.custom_fields.map(
+                                            (field: any, idx: number) => (
+                                              <div key={idx}>
+                                                {field.selectedOptions
+                                                  .filter(
+                                                    (opt: any) => opt.price > 0
+                                                  )
+                                                  .map(
+                                                    (
+                                                      opt: any,
+                                                      optIdx: number
+                                                    ) => (
+                                                      <p key={optIdx}>
+                                                        {opt.optionName} $
+                                                        {opt.price.toFixed(2)}
+                                                      </p>
+                                                    )
+                                                  )}
+                                              </div>
                                             )
                                           )}
                                         </div>
@@ -238,11 +262,7 @@ export default function OrderPage() {
                                     {dish.quantity}
                                   </p>
                                   <p className="text-black w-14 md:w-16 lg:w-20 text-base md:text-lg lg:text-xl">
-                                    $
-                                    {(
-                                      (dish.price + dish.extra_price) /
-                                      dish.quantity
-                                    ).toFixed(2)}
+                                    ${(dish.price + dish.extra_price).toFixed(2)}
                                   </p>
                                 </div>
                               </div>
@@ -293,7 +313,7 @@ export default function OrderPage() {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3 md:gap-4 lg:gap-5">
-                                    <div className="flex-shrink-0 mt-1">
+                                    <div className="shrink-0 mt-1">
                                       <div className="size-16 md:size-20 lg:size-24 bg-gray-300 rounded-sm md:rounded-md flex items-center justify-center hover:scale-105 transition-transform duration-200">
                                         <img
                                           src={
@@ -310,16 +330,29 @@ export default function OrderPage() {
                                         {dish.item}
                                       </h4>
                                       {dish.custom_fields &&
-                                        Object.keys(dish.custom_fields).length >
-                                          0 && (
+                                        dish.custom_fields.length > 0 && (
                                           <div className="text-xs md:text-sm lg:text-base text-gray-400 space-y-0.5">
-                                            {Object.entries(
-                                              dish.custom_fields
-                                            ).map(([key, value]) => (
-                                              <p key={key}>
-                                                {key}: {String(value)}
-                                              </p>
-                                            ))}
+                                            {dish.custom_fields.map(
+                                              (field: any, idx: number) => (
+                                                <div key={idx}>
+                                                  {field.selectedOptions
+                                                    .filter(
+                                                      (opt: any) => opt.price > 0
+                                                    )
+                                                    .map(
+                                                      (
+                                                        opt: any,
+                                                        optIdx: number
+                                                      ) => (
+                                                        <p key={optIdx}>
+                                                          {opt.optionName} $
+                                                          {opt.price.toFixed(2)}
+                                                        </p>
+                                                      )
+                                                    )}
+                                                </div>
+                                              )
+                                            )}
                                           </div>
                                         )}
                                       <div className="mt-1 flex items-center gap-2">
@@ -334,11 +367,7 @@ export default function OrderPage() {
                                       {dish.quantity}
                                     </p>
                                     <p className="text-black text-base md:text-lg lg:text-xl">
-                                      $
-                                      {(
-                                        (dish.price + dish.extra_price) /
-                                        dish.quantity
-                                      ).toFixed(2)}
+                                      ${(dish.price + dish.extra_price).toFixed(2)}
                                     </p>
                                   </div>
                                 </div>
@@ -415,8 +444,8 @@ export default function OrderPage() {
                       disabled={isProcessingPayment || remainingAmount <= 0}
                       className={`mt-5 md:mt-6 lg:mt-7 w-full py-3 md:py-4 lg:py-5 rounded-full font-normal active:scale-95 transition-all text-white text-base md:text-lg lg:text-xl ${
                         !isProcessingPayment && remainingAmount > 0
-                          ? "bg-gradient-to-r from-[#34808C] to-[#173E44] cursor-pointer"
-                          : "bg-gradient-to-r from-[#34808C] to-[#173E44] opacity-50 cursor-not-allowed"
+                          ? "bg-linear-to-r from-[#34808C] to-[#173E44] cursor-pointer"
+                          : "bg-linear-to-r from-[#34808C] to-[#173E44] opacity-50 cursor-not-allowed"
                       }`}
                     >
                       {isProcessingPayment ? (

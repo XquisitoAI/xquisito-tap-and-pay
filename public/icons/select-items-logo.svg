@@ -1,0 +1,15 @@
+<svg width="65" height="65" viewBox="0 0 65 65" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="65" height="65" fill="white"/>
+<rect x="8.18" y="9.18" width="12.64" height="12.64" rx="1.26" fill="#EAB3F4"/>
+<rect x="8.18" y="9.18" width="12.64" height="12.64" rx="1.26" stroke="black" stroke-width="0.36"/>
+<path d="M18 13L13.1875 18L11 15.7273" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="26" y1="15.1" x2="54" y2="15.1" stroke="black" stroke-width="0.8"/>
+<rect x="8.18" y="26.18" width="12.64" height="12.64" rx="1.26" fill="#EAB3F4"/>
+<rect x="8.18" y="26.18" width="12.64" height="12.64" rx="1.26" stroke="black" stroke-width="0.36"/>
+<path d="M18 30L13.1875 35L11 32.7273" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="26" y1="32.1" x2="54" y2="32.1" stroke="black" stroke-width="0.8"/>
+<rect x="8.18" y="43.18" width="12.64" height="12.64" rx="1.26" fill="#EAB3F4"/>
+<rect x="8.18" y="43.18" width="12.64" height="12.64" rx="1.26" stroke="black" stroke-width="0.36"/>
+<path d="M18 47L13.1875 52L11 49.7273" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="26" y1="49.1" x2="54" y2="49.1" stroke="black" stroke-width="0.8"/>
+</svg>

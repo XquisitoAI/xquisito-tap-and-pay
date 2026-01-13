@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import MenuHeaderBack from "@/app/components/headers/MenuHeader";
 import { Loader2 } from "lucide-react";
+import { useTable } from "@/app/context/TableContext";
+import { orderService } from "@/app/services/order.service";
 
 export default function UserPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -11,6 +13,7 @@ export default function UserPage() {
   const [userName, setUserName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tableNumber, navigateWithTable } = useTableNavigation();
+  const { state } = useTable();
 
   // Función para validar que solo se ingresen caracteres de texto válidos para nombres
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,10 +49,19 @@ export default function UserPage() {
     if (userName.trim()) {
       setIsSubmitting(true);
       try {
-        navigateWithTable("/card-selection");
+        // Agregar usuario invitado a active_users
+        if (state.order?.order_id) {
+          await orderService.addActiveUser(
+            state.order.order_id,
+            undefined,
+            userName.trim()
+          );
+        }
+        navigateWithTable("/payment-options");
       } catch (error) {
         console.error("Error submitting order:", error);
-        // Si hay error, ocultar la animación
+        // Si hay error, ocultar la animación y continuar con navegación
+        navigateWithTable("/payment-options");
       } finally {
         setIsSubmitting(false);
       }

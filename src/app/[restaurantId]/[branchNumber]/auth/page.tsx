@@ -7,6 +7,8 @@ import Flag from "react-world-flags";
 import { authService } from "@/app/services/auth.service";
 import { useAuth } from "@/app/context/AuthContext";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
+import { orderService } from "@/app/services/order.service";
+import { useTable } from "@/app/context/TableContext";
 
 type Step = "phone" | "verify" | "profile";
 
@@ -34,7 +36,9 @@ export default function AuthPage() {
     verifyOTP,
     createOrUpdateProfile: updateProfile,
     refreshProfile,
+    user,
   } = useAuth();
+  const { state } = useTable();
 
   const restaurantId = params?.restaurantId as string;
   const branchNumber = params?.branchNumber as string;
@@ -120,7 +124,7 @@ export default function AuthPage() {
   }, [countdown]);
 
   // Helper function to handle post-auth redirects
-  const handleAuthRedirect = () => {
+  const handleAuthRedirect = async () => {
     const postAuthRedirect = sessionStorage.getItem(
       "xquisito-post-auth-redirect"
     );
@@ -144,12 +148,21 @@ export default function AuthPage() {
     sessionStorage.removeItem("signupFromPaymentSuccess");
     sessionStorage.removeItem("signInFromMenu");
 
+    // Si viene del flujo de pago, agregar usuario activo
+    if (isFromPaymentFlow && user && state.order?.order_id) {
+      try {
+        await orderService.addActiveUser(state.order.order_id, user.id);
+      } catch (error) {
+        console.error("Error adding active user after login:", error);
+      }
+    }
+
     if (isFromMenu && roomNumber) {
       // User signed in from MenuView settings, redirect to dashboard
       navigateWithTable("/dashboard");
     } else if (isFromPaymentFlow && roomNumber) {
       // User signed up during payment flow, redirect to payment-options
-      navigateWithTable("/card-selection");
+      navigateWithTable("/payment-options");
     } else if (isFromPaymentSuccess) {
       // User signed up from payment-success, redirect to dashboard
       navigateWithTable("/dashboard");

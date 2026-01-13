@@ -230,7 +230,7 @@ export default function MenuHeader({
             </div>
 
             {/* Lista de participantes */}
-            <div className="px-6 md:px-8 lg:px-10 py-4 md:py-5 lg:py-6 space-y-3 md:space-y-4 lg:space-y-5 max-h-80 md:max-h-96 lg:max-h-[28rem] overflow-y-auto">
+            <div className="px-6 md:px-8 lg:px-10 py-4 md:py-5 lg:py-6 space-y-3 md:space-y-4 lg:space-y-5 max-h-80 md:max-h-96 lg:max-h-112 overflow-y-auto">
               {participants.map((participant) => {
                 const isCurrent = isCurrentUser(participant);
                 const displayName = getDisplayName(participant);
