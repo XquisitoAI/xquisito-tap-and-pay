@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import MenuHeaderBack from "@/app/components/headers/MenuHeader";
 import { Loader2 } from "lucide-react";
 import { useTable } from "@/app/context/TableContext";
+import { useGuest } from "@/app/context/GuestContext";
 import { orderService } from "@/app/services/order.service";
 
 export default function UserPage() {
@@ -13,7 +14,14 @@ export default function UserPage() {
   const [userName, setUserName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tableNumber, navigateWithTable } = useTableNavigation();
-  const { state } = useTable();
+  const { state, loadTableData } = useTable();
+  const { guestId, setGuestName } = useGuest();
+
+  // Debug: verificar que guestId está disponible
+  useEffect(() => {
+    console.log("🔍 UserPage - guestId disponible:", guestId);
+    console.log("🔍 UserPage - orderId disponible:", state.order?.order_id);
+  }, [guestId, state.order?.order_id]);
 
   // Función para validar que solo se ingresen caracteres de texto válidos para nombres
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,17 +57,43 @@ export default function UserPage() {
     if (userName.trim()) {
       setIsSubmitting(true);
       try {
+        // Asegurar que tenemos un guest_id
+        let currentGuestId = guestId;
+
+        // Si no hay guestId del contexto, obtenerlo desde localStorage
+        if (!currentGuestId) {
+          currentGuestId = localStorage.getItem("xquisito-guest-id");
+        }
+
+        // Guardar el nombre del invitado en el contexto
+        setGuestName(userName.trim());
+
         // Agregar usuario invitado a active_users
         if (state.order?.order_id) {
-          await orderService.addActiveUser(
+          console.log("💾 Agregando invitado a active_users:", {
+            orderId: state.order.order_id,
+            guestId: currentGuestId,
+            userName: userName.trim(),
+          });
+
+          const response = await orderService.addActiveUser(
             state.order.order_id,
             undefined,
+            currentGuestId,
             userName.trim()
           );
+
+          console.log("✅ Respuesta de addActiveUser:", response);
+
+          // Recargar datos de la mesa para actualizar activeUsers en el contexto
+          await loadTableData();
+          console.log("🔄 Datos de mesa actualizados");
+        } else {
+          console.error("❌ No hay order_id disponible");
         }
         navigateWithTable("/payment-options");
       } catch (error) {
-        console.error("Error submitting order:", error);
+        console.error("❌ Error submitting order:", error);
         // Si hay error, ocultar la animación y continuar con navegación
         navigateWithTable("/payment-options");
       } finally {

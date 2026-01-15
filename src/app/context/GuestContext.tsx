@@ -14,9 +14,9 @@ import { useAuth } from "./AuthContext";
 interface GuestContextType {
   isGuest: boolean;
   guestId: string | null;
-  roomNumber: string | null;
+  tableNumber: string | null;
   guestName: string | null;
-  setAsGuest: (roomNumber?: string) => void;
+  setAsGuest: (tableNumber?: string) => void;
   setAsAuthenticated: (userId: string) => void;
   clearGuestSession: () => void;
   setGuestName: (name: string) => void;
@@ -31,7 +31,7 @@ interface GuestProviderProps {
 function GuestProviderInternal({ children }: GuestProviderProps) {
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [guestId, setGuestId] = useState<string | null>(null);
-  const [roomNumber, setRoomNumber] = useState<string | null>(null);
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [guestName, setGuestName] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -44,7 +44,7 @@ function GuestProviderInternal({ children }: GuestProviderProps) {
   useEffect(() => {
     if (isLoading) return; // Wait for auth to load
 
-    const roomParam = searchParams?.get("room");
+    const tableParam = searchParams?.get("table");
 
     if (user) {
       // User is registered - clear any guest session
@@ -52,39 +52,47 @@ function GuestProviderInternal({ children }: GuestProviderProps) {
         clearGuestSession();
       }
     } else {
-      // No registered user - check if we should be guest
+      // No registered user - ensure guest ID exists
 
       const storedGuestId = localStorage.getItem("xquisito-guest-id");
-      const storedRoomNumber = localStorage.getItem("xquisito-room-number");
+      const storedTableNumber = localStorage.getItem("xquisito-table-number");
 
-      // Priority 1: If URL has room parameter, use it (even if restoring session)
-      if (roomParam) {
+      // Priority 1: If URL has table parameter, use it (even if restoring session)
+      if (tableParam) {
         // Use existing guest ID if available, or create new one
         const guestIdToUse = storedGuestId || generateGuestId();
 
         // Store to localStorage FIRST to ensure persistence
-        localStorage.setItem("xquisito-room-number", roomParam);
+        localStorage.setItem("xquisito-table-number", tableParam);
         localStorage.setItem("xquisito-guest-id", guestIdToUse);
 
         setIsGuest(true);
         setGuestId(guestIdToUse);
-        setRoomNumber(roomParam);
+        setTableNumber(tableParam);
         return;
       }
 
-      // Priority 2: Restore existing guest session (only if no room param)
-      if (storedGuestId && storedRoomNumber) {
+      // Priority 2: Restore existing guest session (only if no table param)
+      if (storedGuestId && storedTableNumber) {
         const storedGuestName = localStorage.getItem("xquisito-guest-name");
         setIsGuest(true);
         setGuestId(storedGuestId);
-        setRoomNumber(storedRoomNumber);
+        setTableNumber(storedTableNumber);
         setGuestName(storedGuestName);
         return;
+      }
+
+      // Priority 3: No registered user and no existing session - create guest ID automatically
+      // This ensures we always have a guest_id for tracking purposes
+      if (!storedGuestId) {
+        const newGuestId = generateGuestId();
+        setIsGuest(true);
+        setGuestId(newGuestId);
       }
     }
   }, [isLoading, user, searchParams]);
 
-  const setAsGuest = (newRoomNumber?: string) => {
+  const setAsGuest = (newTableNumber?: string) => {
     // Generate guest ID through apiService (which handles localStorage)
     const generatedGuestId = generateGuestId();
 
@@ -94,9 +102,9 @@ function GuestProviderInternal({ children }: GuestProviderProps) {
     setIsGuest(true);
     setGuestId(generatedGuestId);
 
-    if (newRoomNumber) {
-      localStorage.setItem("xquisito-room-number", newRoomNumber);
-      setRoomNumber(newRoomNumber);
+    if (newTableNumber) {
+      localStorage.setItem("xquisito-table-number", newTableNumber);
+      setTableNumber(newTableNumber);
     }
   };
 
@@ -110,7 +118,7 @@ function GuestProviderInternal({ children }: GuestProviderProps) {
     // El guest_id debe preservarse para la migración del carrito en CartContext
     setIsGuest(false);
     setGuestId(null);
-    setRoomNumber(null);
+    setTableNumber(null);
     setGuestName(null);
     localStorage.removeItem("xquisito-guest-name");
     // NO eliminar xquisito-guest-id aquí - lo necesitamos para migrar el carrito
@@ -140,7 +148,7 @@ function GuestProviderInternal({ children }: GuestProviderProps) {
   const value: GuestContextType = {
     isGuest,
     guestId,
-    roomNumber,
+    tableNumber,
     guestName,
     setAsGuest,
     setAsAuthenticated,
@@ -179,8 +187,8 @@ export function useIsGuest(): boolean {
 // Helper hook to get guest info
 export function useGuestInfo(): {
   guestId: string | null;
-  roomNumber: string | null;
+  tableNumber: string | null;
 } {
-  const { guestId, roomNumber } = useGuest();
-  return { guestId, roomNumber };
+  const { guestId, tableNumber } = useGuest();
+  return { guestId, tableNumber };
 }

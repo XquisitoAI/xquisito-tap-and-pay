@@ -134,22 +134,57 @@ class PaymentService {
     });
   }
 
-  // Pagar platillos seleccionados
-  async paySelectedDishes(
-    dishIds: string[],
-    paymentMethodId: string | null
-  ): Promise<ApiResponse<any>> {
-    return this.request("/tap-pay/dishes/pay-selected", {
+  // Pagar un platillo individual
+  async payDishOrder(params: {
+    dishId: string;
+    paymentMethodId: string | null;
+    userId?: string;
+    guestId?: string | null;
+    guestName?: string | null;
+  }): Promise<ApiResponse<any>> {
+    return this.request(`/tap-pay/dishes/${params.dishId}/pay`, {
       method: "POST",
-      body: JSON.stringify({ dishIds, paymentMethodId }),
+      body: JSON.stringify({
+        paymentMethodId: params.paymentMethodId,
+        userId: params.userId,
+        guestId: params.guestId,
+        guestName: params.guestName,
+      }),
     });
   }
 
+  // Pagar platillos seleccionados (itera sobre cada uno)
+  async paySelectedDishes(params: {
+    dishIds: string[];
+    paymentMethodId: string | null;
+    userId?: string;
+    guestId?: string | null;
+    guestName?: string | null;
+  }): Promise<ApiResponse<any>> {
+    for (const dishId of params.dishIds) {
+      try {
+        await this.payDishOrder({
+          dishId,
+          paymentMethodId: params.paymentMethodId,
+          userId: params.userId,
+          guestId: params.guestId,
+          guestName: params.guestName,
+        });
+      } catch (error) {
+        console.error(`Error paying dish ${dishId}:`, error);
+        throw error;
+      }
+    }
+    return { success: true, data: { paidCount: params.dishIds.length } };
+  }
+
   // Pagar monto de la orden
+  // NOTA: No se envía paymentMethodId - solo registra que se pagó el monto
   async payOrderAmount(params: {
     orderId: string;
     amount: number;
     userId?: string;
+    guestId?: string | null;
     guestName?: string | null;
     paymentMethodId: string | null;
   }): Promise<ApiResponse<any>> {
@@ -157,25 +192,27 @@ class PaymentService {
       method: "POST",
       body: JSON.stringify({
         amount: params.amount,
-        paymentMethodId: params.paymentMethodId,
         userId: params.userId,
+        guestId: params.guestId,
         guestName: params.guestName,
       }),
     });
   }
 
   // Pagar monto de split
+  // NOTA: No se envía paymentMethodId - solo registra el pago de la división
   async paySplitAmount(params: {
     orderId: string;
     userId?: string;
+    guestId?: string | null;
     guestName?: string | null;
     paymentMethodId: string | null;
   }): Promise<ApiResponse<any>> {
     return this.request(`/tap-pay/orders/${params.orderId}/pay-split`, {
       method: "POST",
       body: JSON.stringify({
-        paymentMethodId: params.paymentMethodId,
         userId: params.userId,
+        guestId: params.guestId,
         guestName: params.guestName,
       }),
     });

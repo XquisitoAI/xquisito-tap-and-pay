@@ -178,35 +178,29 @@ export default function PaymentOptionsPage() {
   );
   const paidDishes = dishes.filter((dish) => dish.payment_status === "paid");
 
-  // Calcular totales
-  const tableTotalPrice = dishes.reduce(
+  // Usar los totales de la orden directamente (incluye todos los métodos de pago)
+  const tableTotalPrice = state.order?.total_amount || dishes.reduce(
     (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
     0
   );
 
-  const paidAmount = paidDishes.reduce(
-    (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
-    0
-  );
+  // paid_amount de la orden incluye pagos por todos los métodos
+  const paidAmount = state.order?.paid_amount || 0;
 
-  const unpaidAmount = unpaidDishes.reduce(
-    (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
-    0
-  );
+  // remaining_amount de la orden es lo que falta por pagar
+  const unpaidAmount = state.order?.remaining_amount || tableTotalPrice - paidAmount;
 
   // Obtener usuarios únicos que NO hayan pagado nada
   const uniqueUsers = (() => {
     // Si tenemos activeUsers, usar esa información
     if (activeUsers && activeUsers.length > 0) {
       const usersWithNoPaid = activeUsers
-        .filter((user) => {
-          const totalPaid =
-            (user.total_paid_individual || 0) +
-            (user.total_paid_amount || 0) +
-            (user.total_paid_split || 0);
+        .filter((user: any) => {
+          // amount_paid es el campo de la tabla active_tap_pay_users
+          const totalPaid = parseFloat(user.amount_paid) || 0;
           return totalPaid === 0;
         })
-        .map((user) => user.display_name)
+        .map((user: any) => user.display_name)
         .filter(Boolean);
 
       console.log("🔍 Using active_users with NO payments:");

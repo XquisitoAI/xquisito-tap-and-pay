@@ -1,7 +1,7 @@
 export interface Restaurant {
   id: number;
   name: string;
-  logo?: string;
+  logo_url?: string;
   primary_color?: string;
   secondary_color?: string;
 }

@@ -7,8 +7,9 @@ import { useRestaurant } from "@/app/context/RestaurantContext";
 import { usePayment } from "@/app/context/PaymentContext";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { useEcartPay } from "@/app/hooks/useEcartPay";
+import { useGuest } from "@/app/context/GuestContext";
 import MenuHeaderBack from "@/app/components/headers/MenuHeader";
+import OrderAnimation from "@/app/components/UI/OrderAnimation";
 import { paymentService } from "@/app/services/payment.service";
 import { Plus, Trash2, Loader2, CircleAlert, X } from "lucide-react";
 import { getCardTypeIcon } from "@/app/utils/cardIcons";
@@ -22,6 +23,7 @@ export default function CardSelectionPage() {
   const { hasPaymentMethods, paymentMethods, deletePaymentMethod } =
     usePayment();
   const { user, profile, isLoading: authLoading } = useAuth();
+  const { guestId } = useGuest();
 
   // Tarjeta por defecto del sistema
   const defaultSystemCard = {
@@ -64,27 +66,19 @@ export default function CardSelectionPage() {
       ? (xquisitoCommissionTotal / subtotalForCommission) * 100
       : 0;
 
-  const {
-    createCheckout,
-    isLoading: paymentLoading,
-    error: paymentError,
-    waitForSDK,
-  } = useEcartPay();
-
+  // Get name from profile or localStorage for guests
   const effectiveName =
     (profile?.firstName && profile?.lastName
       ? `${profile.firstName} ${profile.lastName}`
-      : profile?.firstName || "") || "";
+      : profile?.firstName || "") ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("xquisito-guest-name") || ""
+      : "");
 
   const [name, setName] = useState(effectiveName);
-  const [email, setEmail] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("mastercard");
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<
     string | null
   >(null);
-  const [paymentMethodType, setPaymentMethodType] = useState<"saved" | "new">(
-    "new"
-  );
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
@@ -94,6 +88,11 @@ export default function CardSelectionPage() {
   const [showTotalModal, setShowTotalModal] = useState(false);
   const [showPaymentOptionsModal, setShowPaymentOptionsModal] = useState(false);
   const [selectedMSI, setSelectedMSI] = useState<number | null>(null);
+  const [pendingPaymentData, setPendingPaymentData] = useState<{
+    paymentId: string;
+    amount: number;
+    paymentType: string;
+  } | null>(null);
 
   // Establecer restaurantId y branchNumber desde los path params
   useEffect(() => {
@@ -172,54 +171,132 @@ export default function CardSelectionPage() {
       setSelectedPaymentMethodId(defaultMethod.id);
       console.log("💳 Auto-seleccionando tarjeta:", defaultMethod.id);
     }
-    setPaymentMethodType("saved");
     setIsLoadingInitial(false);
   }, [allPaymentMethods.length]);
 
-  const handlePaymentSuccess = async (
-    paymentId: string,
-    amount: number,
-    paymentType: string
-  ): Promise<void> => {
+  // Esta función se ejecuta DESPUÉS de que expira el período de cancelación (4 segundos)
+  // Es cuando realmente se procesa el pago en el servidor
+  const handleConfirmPayment = async () => {
+    if (!pendingPaymentData) {
+      console.error("❌ No hay datos de pago pendientes");
+      return;
+    }
+
+    const { paymentId, amount, paymentType } = pendingPaymentData;
+
     try {
-      setIsProcessing(true);
-      setIsAnimatingOut(true);
+      console.log("✅ Procesando pago confirmado (después de 4 seg)...");
 
       const realPaymentMethodId =
         selectedPaymentMethodId === "system-default-card"
           ? null
           : selectedPaymentMethodId;
 
+      // Obtener guest_id del contexto o de localStorage
+      let currentGuestId = guestId;
+      if (!currentGuestId && !user?.id) {
+        currentGuestId = localStorage.getItem("xquisito-guest-id");
+      }
+
+      // guest_name debe contener el nombre visible, sea invitado o usuario registrado
+      const displayName = user?.id
+        ? `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim() || "Usuario"
+        : (name.trim() || "Invitado");
+
+      // Ejecutar el pago según el tipo (incluyendo tarjeta del sistema)
       if (paymentType === "select-items") {
-        await paymentService.paySelectedDishes(
-          selectedItems,
-          realPaymentMethodId
-        );
+        await paymentService.paySelectedDishes({
+          dishIds: selectedItems,
+          paymentMethodId: realPaymentMethodId,
+          userId: user?.id,
+          guestId: !user?.id ? currentGuestId : null,
+          guestName: displayName,
+        });
       } else if (paymentType === "equal-shares") {
         await paymentService.paySplitAmount({
           orderId: state.order?.order_id!,
           userId: user?.id,
-          guestName: !user?.id ? name.trim() : null,
+          guestId: !user?.id ? currentGuestId : null,
+          guestName: displayName,
           paymentMethodId: realPaymentMethodId,
         });
       } else if (
         paymentType === "full-bill" ||
         paymentType === "choose-amount"
       ) {
+        // Asegurarse de que tenemos todos los parámetros requeridos
+        if (!baseAmount || baseAmount <= 0) {
+          console.error("❌ baseAmount inválido:", baseAmount);
+          throw new Error("El monto del pago debe ser mayor a 0");
+        }
+
+        console.log("💰 Parámetros del pago:", {
+          orderId: state.order?.order_id,
+          amount: baseAmount,
+          userId: user?.id,
+          guestId: !user?.id ? currentGuestId : null,
+          guestName: displayName,
+          paymentMethodId: realPaymentMethodId,
+        });
+
         await paymentService.payOrderAmount({
           orderId: state.order?.order_id!,
           amount: baseAmount,
           userId: user?.id,
-          guestName: !user?.id ? name.trim() : null,
-          paymentMethodId: realPaymentMethodId,
+          guestId: !user?.id ? currentGuestId : null,
+          guestName: displayName,
+          paymentMethodId: realPaymentMethodId, // null para tarjeta del sistema
         });
       }
 
+      // Guardar datos del pago para payment-success
+      const selectedMethod = allPaymentMethods.find(
+        (pm) => pm.id === selectedPaymentMethodId
+      );
+
+      const paymentData = {
+        paymentId: paymentId,
+        transactionId: paymentId,
+        amount: amount,
+        totalAmountCharged: totalAmountCharged,
+        baseAmount: baseAmount,
+        tipAmount: tipAmount,
+        ivaTip: ivaTip,
+        xquisitoCommissionClient: xquisitoCommissionClient,
+        xquisitoCommissionRestaurant: xquisitoCommissionRestaurant,
+        ivaXquisitoClient: ivaXquisitoClient,
+        ivaXquisitoRestaurant: ivaXquisitoRestaurant,
+        paymentType: paymentType,
+        userName: profile?.firstName || name,
+        cardLast4: selectedMethod?.lastFourDigits,
+        cardBrand: selectedMethod?.cardBrand,
+        items:
+          paymentType === "select-items"
+            ? unpaidDishes.filter((d) => selectedItems.includes(d.id))
+            : unpaidDishes,
+        selectedItems:
+          paymentType === "select-items" ? selectedItems : undefined,
+      };
+
+      // Guardar en localStorage
+      localStorage.setItem(
+        "xquisito-completed-payment",
+        JSON.stringify(paymentData)
+      );
+      console.log("💾 Payment data saved to localStorage");
+
+      // Operaciones en segundo plano
       const backgroundOperations = async () => {
         try {
           console.log("🔄 Reloading table data after payment (background)...");
           await loadTableData();
 
+          // TODO: Implementar endpoint para registrar transacción de pago
+          // El endpoint /api/tap-pay/transactions/record no existe aún
+          // Por ahora, el pago se registra a través de payOrderAmount/paySelectedDishes
+          console.log("📊 Payment recorded via payment service methods");
+
+          /*
           console.log("📊 Recording payment transaction (background)");
 
           const transactionPaymentMethodId =
@@ -250,25 +327,19 @@ export default function CardSelectionPage() {
           console.log(
             "✅ Payment transaction recorded successfully (background)"
           );
+          */
         } catch (transactionError) {
           console.error("❌ Error in background operations:", transactionError);
         }
       };
 
       backgroundOperations();
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setShowPaymentAnimation(true);
-      setIsAnimatingOut(false);
-
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      setShowPaymentAnimation(false);
-
-      navigateWithTable("/order");
     } catch (error) {
-      console.error("❌ Error in handlePaymentSuccess:", error);
+      console.error("❌ Error in handleConfirmPayment:", error);
+      setShowPaymentAnimation(false);
       setIsProcessing(false);
       setIsAnimatingOut(false);
+      setPendingPaymentData(null);
       alert("Error al procesar el pago. Por favor intenta de nuevo.");
     }
   };
@@ -276,63 +347,69 @@ export default function CardSelectionPage() {
   const handlePayment = async () => {
     if (isProcessing) return;
 
-    console.log("💳 Iniciando proceso de pago...");
-
-    if (paymentMethodType === "new") {
-      if (!name.trim()) {
-        alert("Por favor ingresa tu nombre");
-        return;
-      }
-      setIsProcessing(true);
-
-      try {
-        await waitForSDK();
-
-        await createCheckout({
-          cardType: selectedPayment,
-          amount: totalAmountCharged,
-          baseAmount: baseAmount,
-          tipAmount: tipAmount,
-          paymentType: paymentType,
-          onSuccess: handlePaymentSuccess,
-          onError: (error: any) => {
-            console.error("Error en el pago:", error);
-            setIsProcessing(false);
-            alert("Error al procesar el pago. Por favor intenta de nuevo.");
-          },
-          customerInfo: {
-            name: name.trim(),
-            email: email.trim() || undefined,
-          },
-          saveCard: false,
-          msi: selectedMSI || undefined,
-        });
-      } catch (error) {
-        console.error("Error al iniciar checkout:", error);
-        setIsProcessing(false);
-        alert("Error al iniciar el proceso de pago.");
-      }
-    } else {
-      if (!selectedPaymentMethodId) {
-        alert("Por favor selecciona un método de pago");
-        return;
-      }
-
-      setIsProcessing(true);
-
-      try {
-        const mockPaymentId = `mock-payment-${Date.now()}`;
-        await handlePaymentSuccess(
-          mockPaymentId,
-          totalAmountCharged,
-          paymentType
-        );
-      } catch (error) {
-        console.error("Error al procesar pago con tarjeta guardada:", error);
-        setIsProcessing(false);
-        alert("Error al procesar el pago. Por favor intenta de nuevo.");
-      }
+    if (!selectedPaymentMethodId) {
+      alert("Por favor selecciona un método de pago");
+      return;
     }
+
+    console.log("💳 Iniciando proceso de pago...");
+    setIsProcessing(true);
+
+    try {
+      // Si se seleccionó la tarjeta del sistema, procesar pago directamente
+      if (selectedPaymentMethodId === "system-default-card") {
+        console.log(
+          "💳 Sistema: Procesando pago con tarjeta del sistema (sin cargo real)"
+        );
+
+        // Para tarjeta del sistema, procesar inmediatamente sin animación de espera
+        const mockPaymentId = `system-payment-${Date.now()}`;
+
+        // Guardar los datos del pago pendiente para procesarlo en onConfirm
+        setPendingPaymentData({
+          paymentId: mockPaymentId,
+          amount: totalAmountCharged,
+          paymentType,
+        });
+
+        // Mostrar animación inmediatamente (sin delay para evitar parpadeo negro)
+        setShowPaymentAnimation(true);
+        return;
+      }
+
+      // Para tarjetas reales de usuario
+      const mockPaymentId = `payment-${Date.now()}`;
+
+      // Guardar los datos del pago pendiente para procesarlo en onConfirm
+      setPendingPaymentData({
+        paymentId: mockPaymentId,
+        amount: totalAmountCharged,
+        paymentType,
+      });
+
+      // Mostrar animación inmediatamente sin procesar el pago aún (sin delay)
+      setShowPaymentAnimation(true);
+    } catch (error) {
+      console.error("Error al preparar pago:", error);
+      setIsProcessing(false);
+      alert("Error al procesar el pago. Por favor intenta de nuevo.");
+    }
+  };
+
+  const handleAddCard = (): void => {
+    const queryParams = new URLSearchParams({
+      amount: totalAmountCharged.toString(),
+      baseAmount: baseAmount.toString(),
+      tipAmount: tipAmount.toString(),
+      ivaTip: ivaTip.toString(),
+      xquisitoCommissionClient: xquisitoCommissionClient.toString(),
+      ivaXquisitoClient: ivaXquisitoClient.toString(),
+      xquisitoCommissionRestaurant: xquisitoCommissionRestaurant.toString(),
+      xquisitoCommissionTotal: xquisitoCommissionTotal.toString(),
+      type: paymentType,
+    });
+
+    navigateWithTable(`/add-card?${queryParams.toString()}`);
   };
 
   const handleDeleteCard = async (cardId: string) => {
@@ -390,25 +467,40 @@ export default function CardSelectionPage() {
     );
   }
 
-  /*
-  if (showPaymentAnimation) {
-    return (
-      <PaymentAnimation onComplete={() => setShowPaymentAnimation(false)} />
-    );
-  }*/
-
-  const isPayButtonDisabled =
-    isProcessing ||
-    (paymentMethodType === "new" && !name.trim()) ||
-    (paymentMethodType === "saved" && !selectedPaymentMethodId) ||
-    totalAmountCharged <= 0;
-
   return (
-    <div
-      className={`min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col transition-opacity duration-300 ${
-        isAnimatingOut ? "opacity-0" : "opacity-100"
-      }`}
-    >
+    <>
+      {/* OrderAnimation se renderiza encima del contenido */}
+      {showPaymentAnimation && (
+        <OrderAnimation
+          userName={profile?.firstName || name}
+          orderedItems={
+            paymentType === "select-items"
+              ? unpaidDishes.filter((d) => selectedItems.includes(d.id))
+              : unpaidDishes
+          }
+          onContinue={() => {
+            // Esta función se ejecuta después de la animación completa (9 segundos)
+            navigateWithTable(
+              `/payment-success?paymentId=${pendingPaymentData?.paymentId || Date.now()}&amount=${totalAmountCharged}`
+            );
+          }}
+          onCancel={() => {
+            // El usuario canceló el pago durante la ventana de 4 segundos
+            setShowPaymentAnimation(false);
+            setIsProcessing(false);
+            setIsAnimatingOut(false);
+            setPendingPaymentData(null);
+            console.log("❌ Payment cancelled by user");
+          }}
+          onConfirm={handleConfirmPayment}
+        />
+      )}
+
+      <div
+        className={`min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col transition-opacity duration-300 ${
+          isAnimatingOut ? "opacity-0" : "opacity-100"
+        }`}
+      >
       <div className="fixed top-0 left-0 right-0 z-50" style={{ zIndex: 999 }}>
         <MenuHeaderBack />
       </div>
@@ -429,66 +521,70 @@ export default function CardSelectionPage() {
             </div>
 
             <div className="bg-white rounded-t-4xl relative z-10 flex flex-col pt-8 md:pt-10 lg:pt-12 pb-4 md:pb-6">
-              <div className="space-y-6 md:space-y-8 px-8 md:px-10 lg:px-12">
-                {/* Tabs */}
-                <div className="flex gap-2 border-b border-gray-200">
-                  <button
-                    onClick={() => setPaymentMethodType("saved")}
-                    className={`px-4 py-2 font-medium transition-colors ${
-                      paymentMethodType === "saved"
-                        ? "text-teal-600 border-b-2 border-teal-600"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    Tarjetas guardadas
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethodType("new")}
-                    className={`px-4 py-2 font-medium transition-colors ${
-                      paymentMethodType === "new"
-                        ? "text-teal-600 border-b-2 border-teal-600"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    Nueva tarjeta
-                  </button>
+              <div className="space-y-3 md:space-y-4 px-8 md:px-10 lg:px-12">
+                {/* Payment Summary */}
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-black text-base md:text-lg lg:text-xl">
+                        Total a pagar
+                      </span>
+                      <CircleAlert
+                        className="size-4 cursor-pointer text-gray-500"
+                        strokeWidth={2.3}
+                        onClick={() => setShowTotalModal(true)}
+                      />
+                    </div>
+                    <span className="font-medium text-black text-base md:text-lg lg:text-xl">
+                      ${totalAmountCharged.toFixed(2)} MXN
+                    </span>
+                  </div>
                 </div>
 
-                {/* Saved Cards */}
-                {paymentMethodType === "saved" && (
-                  <div className="space-y-3">
+                {/* Saved Cards List */}
+                <div>
+                  <div className="space-y-2.5 mb-2.5">
                     {allPaymentMethods.map((method) => (
                       <div
                         key={method.id}
-                        onClick={() => setSelectedPaymentMethodId(method.id)}
-                        className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                        className={`flex items-center py-1.5 px-5 pl-10 border rounded-full transition-colors ${
                           selectedPaymentMethodId === method.id
                             ? "border-teal-500 bg-teal-50"
-                            : "border-gray-200 hover:border-gray-300"
+                            : "border-black/50 bg-[#f9f9f9]"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="size-10">
-                            {getCardTypeIcon(method.cardBrand)}
-                          </div>
+                        <div
+                          onClick={() => setSelectedPaymentMethodId(method.id)}
+                          className="flex items-center justify-center gap-3 mx-auto cursor-pointer text-base md:text-lg lg:text-xl"
+                        >
+                          <div>{getCardTypeIcon(method.cardBrand)}</div>
                           <div>
-                            <p className="text-black font-medium">
-                              •••• {method.lastFourDigits}
-                            </p>
-                            <p className="text-sm text-gray-500 capitalize">
-                              {method.cardType}
-                              {method.isSystemCard && " (Sistema)"}
+                            <p className="text-black">
+                              **** **** **** {method.lastFourDigits}
                             </p>
                           </div>
                         </div>
+
+                        <div
+                          onClick={() => setSelectedPaymentMethodId(method.id)}
+                          className={`w-4 h-4 rounded-full border-2 cursor-pointer ${
+                            selectedPaymentMethodId === method.id
+                              ? "border-teal-500 bg-teal-500"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          {selectedPaymentMethodId === method.id && (
+                            <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                          )}
+                        </div>
+
+                        {/* Delete Button - No mostrar para tarjeta del sistema */}
                         {!method.isSystemCard && (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteCard(method.id);
-                            }}
+                            onClick={() => handleDeleteCard(method.id)}
                             disabled={deletingCardId === method.id}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            className="pl-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                            title="Eliminar tarjeta"
                           >
                             {deletingCardId === method.id ? (
                               <Loader2 className="size-5 animate-spin" />
@@ -500,97 +596,41 @@ export default function CardSelectionPage() {
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
 
-                {/* New Card */}
-                {paymentMethodType === "new" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre en la tarjeta *
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nombre completo"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      />
-                    </div>
+                {/* Add Payment Method Button */}
+                <div>
+                  <button
+                    onClick={handleAddCard}
+                    className="border border-black/50 flex justify-center items-center gap-1 w-full text-black py-3 rounded-full cursor-pointer transition-colors bg-[#f9f9f9] hover:bg-gray-100 text-base md:text-lg lg:text-xl"
+                  >
+                    <Plus className="size-5" />
+                    Agregar método de pago
+                  </button>
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email (opcional)
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="correo@ejemplo.com"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tipo de tarjeta
-                      </label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {["visa", "mastercard", "amex"].map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => setSelectedPayment(type)}
-                            className={`p-4 border-2 rounded-lg transition-colors ${
-                              selectedPayment === type
-                                ? "border-teal-500 bg-teal-50"
-                                : "border-gray-200 hover:border-gray-300"
-                            }`}
-                          >
-                            <div className="size-12 mx-auto">
-                              {getCardTypeIcon(type)}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Total Section */}
-                <div className="border-t border-gray-200 pt-6">
-                  <div className="w-full flex gap-3 justify-between items-center">
-                    <div className="flex flex-col">
-                      <span className="text-gray-600 text-sm md:text-base">
-                        Total a pagar
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl md:text-3xl font-medium text-black">
-                          ${totalAmountCharged.toFixed(2)}
-                        </span>
-                        <CircleAlert
-                          className="size-4 cursor-pointer text-gray-500"
-                          strokeWidth={2.3}
-                          onClick={() => setShowTotalModal(true)}
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handlePayment}
-                      disabled={isPayButtonDisabled}
-                      className={`rounded-full px-16 h-12 flex items-center justify-center text-lg transition-all bg-linear-to-r from-[#34808C] to-[#173E44] text-white ${
-                        isPayButtonDisabled
-                          ? "opacity-50 cursor-not-allowed"
-                          : "animate-pulse-button active:scale-90 cursor-pointer"
-                      }`}
-                    >
-                      {isProcessing ? (
+                {/* Pay Button */}
+                <div className="">
+                  <button
+                    onClick={handlePayment}
+                    disabled={isProcessing || !selectedPaymentMethodId}
+                    className={`w-full text-white py-3 rounded-full cursor-pointer transition-colors text-base md:text-lg lg:text-xl active:scale-90 ${
+                      isProcessing || !selectedPaymentMethodId
+                        ? "bg-lienar-to-r from-[#34808C] to-[#173E44] opacity-50 cursor-not-allowed"
+                        : "bg-linear-to-r from-[#34808C] to-[#173E44] animate-pulse-button"
+                    }`}
+                  >
+                    {isProcessing ? (
+                      <div className="flex items-center justify-center gap-2 md:gap-3">
                         <Loader2 className="size-5 animate-spin" />
-                      ) : (
-                        "Pagar"
-                      )}
-                    </button>
-                  </div>
+                        <span>Procesando...</span>
+                      </div>
+                    ) : !selectedPaymentMethodId ? (
+                      "Selecciona una tarjeta"
+                    ) : (
+                      "Pagar"
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -657,5 +697,6 @@ export default function CardSelectionPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

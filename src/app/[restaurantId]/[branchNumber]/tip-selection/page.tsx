@@ -119,20 +119,17 @@ export default function TipSelectionPage() {
   );
   const paidDishes = dishes.filter((dish) => dish.payment_status === "paid");
 
-  const tableTotalPrice = dishes.reduce(
+  // Usar los totales de la orden directamente (incluye todos los métodos de pago)
+  const tableTotalPrice = state.order?.total_amount || dishes.reduce(
     (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
     0
   );
 
-  const paidAmount = paidDishes.reduce(
-    (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
-    0
-  );
+  // paid_amount de la orden incluye pagos por todos los métodos
+  const paidAmount = state.order?.paid_amount || 0;
 
-  const unpaidAmount = unpaidDishes.reduce(
-    (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
-    0
-  );
+  // remaining_amount de la orden es lo que falta por pagar
+  const unpaidAmount = state.order?.remaining_amount || tableTotalPrice - paidAmount;
 
   const getPaymentAmount = () => {
     switch (paymentType) {

@@ -125,11 +125,12 @@ class OrderService {
   async addActiveUser(
     orderId: string,
     userId?: string,
+    guestId?: string | null,
     guestName?: string
   ): Promise<ApiResponse<any>> {
     return this.request(`/tap-pay/orders/${orderId}/active-users`, {
       method: "POST",
-      body: JSON.stringify({ userId, guestName }),
+      body: JSON.stringify({ userId, guestId, guestName }),
     });
   }
 

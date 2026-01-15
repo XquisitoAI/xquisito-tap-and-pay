@@ -4,7 +4,7 @@ import { useTable } from "@/app/context/TableContext";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Restaurant } from "@/app/types/restaurant";
 
@@ -33,6 +33,12 @@ export default function MenuHeader({
     {}
   );
   const { user, profile, isLoading } = useAuth();
+  const [participantsKey, setParticipantsKey] = useState(0);
+
+  // Forzar actualización cuando cambian los activeUsers
+  useEffect(() => {
+    setParticipantsKey(prev => prev + 1);
+  }, [state.activeUsers, state.activeUsers?.length]);
 
   const handleBack = () => {
     if (pathname?.includes("payment-options")) {
@@ -157,7 +163,7 @@ export default function MenuHeader({
             <div className="size-10 md:size-12 lg:size-14 bg-gray-300 animate-pulse rounded-full border border-white shadow-sm"></div>
           </div>
         ) : participants.length > 0 ? (
-          <div className="flex items-center space-x-1">
+          <div key={participantsKey} className="flex items-center space-x-1">
             {remainingCount > 0 && (
               <div
                 onClick={() => setIsParticipantsModalOpen(true)}

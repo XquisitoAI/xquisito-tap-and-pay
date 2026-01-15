@@ -37,6 +37,7 @@ export default function AuthPage() {
     createOrUpdateProfile: updateProfile,
     refreshProfile,
     user,
+    profile,
   } = useAuth();
   const { state } = useTable();
 
@@ -151,7 +152,17 @@ export default function AuthPage() {
     // Si viene del flujo de pago, agregar usuario activo
     if (isFromPaymentFlow && user && state.order?.order_id) {
       try {
-        await orderService.addActiveUser(state.order.order_id, user.id);
+        const userName =
+          profile?.firstName && profile?.lastName
+            ? `${profile.firstName} ${profile.lastName}`
+            : profile?.firstName || "Usuario";
+
+        await orderService.addActiveUser(
+          state.order.order_id,
+          user.id,
+          null, // guestId es null para usuarios autenticados
+          userName
+        );
       } catch (error) {
         console.error("Error adding active user after login:", error);
       }

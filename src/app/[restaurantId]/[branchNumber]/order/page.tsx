@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeClosed, Loader, Loader2 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
+import { useGuest } from "@/app/context/GuestContext";
 import { useTable } from "@/app/context/TableContext";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import { useRestaurant } from "@/app/context/RestaurantContext";
@@ -15,7 +16,8 @@ export default function OrderPage() {
   const params = useParams();
   const { state, setTableNumber, loadTableData } = useTable();
   const { navigateWithTable } = useTableNavigation();
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user, profile } = useAuth();
+  const { guestId } = useGuest();
   const { restaurant, setParams } = useRestaurant();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
@@ -50,13 +52,63 @@ export default function OrderPage() {
     setIsProcessingPayment(true);
     try {
       if (!authLoading && isAuthenticated && user) {
-        // Usuario autenticado: agregar a active_users y redirigir
+        // Usuario autenticado: verificar si ya está en active_users
         if (state.order?.order_id) {
-          await orderService.addActiveUser(state.order.order_id, user.id);
+          const activeUsersResponse = await orderService.getActiveUsers(state.order.order_id);
+
+          if (activeUsersResponse.success && activeUsersResponse.data) {
+            const existingUser = activeUsersResponse.data.find(
+              (u: any) => u.user_id === user.id
+            );
+
+            if (existingUser) {
+              // Usuario ya está registrado - ir directo a payment-options
+              console.log("User already in active_users, going to payment-options");
+              navigateWithTable("/payment-options");
+              return;
+            }
+          }
+
+          // Usuario no está en active_users - agregarlo
+          const userName = profile?.firstName && profile?.lastName
+            ? `${profile.firstName} ${profile.lastName}`
+            : profile?.firstName || "Usuario";
+
+          await orderService.addActiveUser(
+            state.order.order_id,
+            user.id,
+            null, // guestId es null para usuarios autenticados
+            userName
+          );
         }
         navigateWithTable("/payment-options");
       } else {
-        // Invitado: redirigir a auth-selection (donde puede loggearse o poner su nombre)
+        // Invitado: verificar si ya está en active_users
+        // Obtener guest_id del contexto o de localStorage
+        let currentGuestId = guestId;
+        if (!currentGuestId) {
+          currentGuestId = localStorage.getItem("xquisito-guest-id");
+        }
+
+        if (state.order?.order_id && currentGuestId) {
+          // Verificar si el guest_id ya está en active_users
+          const activeUsersResponse = await orderService.getActiveUsers(state.order.order_id);
+
+          if (activeUsersResponse.success && activeUsersResponse.data) {
+            const existingGuest = activeUsersResponse.data.find(
+              (u: any) => u.guest_id === currentGuestId
+            );
+
+            if (existingGuest) {
+              // El invitado ya está registrado - ir directo a payment-options
+              console.log("Guest already in active_users, going to payment-options");
+              navigateWithTable("/payment-options");
+              return;
+            }
+          }
+        }
+
+        // Invitado no registrado: redirigir a auth-selection (donde puede loggearse o poner su nombre)
         navigateWithTable("/auth-selection");
       }
     } catch (error) {
