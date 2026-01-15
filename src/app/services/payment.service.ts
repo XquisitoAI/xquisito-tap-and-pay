@@ -29,6 +29,7 @@ export interface AddPaymentMethodRequest {
   expiryDate: string;
   cvv: string;
   cardholderName: string;
+  email?: string;
 }
 
 export interface ProcessPaymentRequest {
@@ -74,9 +75,18 @@ class PaymentService {
   async addPaymentMethod(
     paymentData: AddPaymentMethodRequest
   ): Promise<ApiResponse<{ paymentMethod: PaymentMethod }>> {
+    // Mapear campos del frontend a los esperados por el backend
+    const backendPayload = {
+      fullName: paymentData.cardholderName,
+      email: paymentData.email,
+      cardNumber: paymentData.cardNumber,
+      expDate: paymentData.expiryDate,
+      cvv: paymentData.cvv,
+    };
+
     return this.request("/payment-methods", {
       method: "POST",
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(backendPayload),
     });
   }
 
@@ -222,8 +232,7 @@ class PaymentService {
   async recordPaymentTransaction(params: {
     payment_method_id: string | null;
     restaurant_id: number;
-    id_table_order: string | null;
-    id_tap_orders_and_pay: string | null;
+    id_tap_pay_order: string | null; // Para Tap & Pay (tap_pay_orders)
     base_amount: number;
     tip_amount: number;
     iva_tip: number;
@@ -239,7 +248,7 @@ class PaymentService {
     subtotal_for_commission: number;
     currency: string;
   }): Promise<ApiResponse<any>> {
-    return this.request("/tap-pay/transactions/record", {
+    return this.request("/payment-transactions", {
       method: "POST",
       body: JSON.stringify(params),
     });

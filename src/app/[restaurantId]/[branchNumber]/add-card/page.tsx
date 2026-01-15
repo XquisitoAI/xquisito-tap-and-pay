@@ -25,7 +25,7 @@ function AddCardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isGuest = useIsGuest();
-  const { guestId, roomNumber } = useGuest();
+  const { guestId, tableNumber } = useGuest();
   const { addPaymentMethod, refreshPaymentMethods, paymentMethods } =
     usePayment();
   const { user, isAuthenticated } = useAuth();
@@ -65,7 +65,7 @@ function AddCardContent() {
     setFullName("Test User");
     setEmail("test@example.com");
     setCardNumber("4242 4242 4242 4242");
-    setExpDate("12/25");
+    setExpDate("12/26");
     setCvv("123");
   };
 
@@ -122,7 +122,7 @@ function AddCardContent() {
       // Log user type for debugging
       if (user) {
         console.log("💳 Adding card for registered user:", user.id);
-      } else if (isGuest && guestId && roomNumber) {
+      } else if (isGuest && guestId && tableNumber) {
         console.log("💳 Adding card for guest:", guestId);
       }
 
@@ -131,6 +131,7 @@ function AddCardContent() {
         cardNumber,
         expiryDate: expDate,
         cvv,
+        email,
       });
 
       if (result.success) {
