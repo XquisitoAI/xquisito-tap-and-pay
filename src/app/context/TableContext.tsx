@@ -99,17 +99,19 @@ export function TableProvider({ children }: { children: ReactNode }) {
         state.tableNumber
       );
 
-      if (response.success && response.data) {
+      if (response.success) {
+        // Si no hay orden (data es null), no es un error, simplemente no hay orden abierta
         setState((prev) => ({
           ...prev,
           order: response.data || null,
           isLoading: false,
+          error: null,
         }));
       } else {
         setState((prev) => ({
           ...prev,
           order: null,
-          error: response.error || "No se encontró orden activa",
+          error: response.error || "Error al cargar la orden",
           isLoading: false,
         }));
       }
@@ -148,9 +150,24 @@ export function TableProvider({ children }: { children: ReactNode }) {
 
       console.log("📥 Order response:", orderResponse);
 
-      if (orderResponse.success && orderResponse.data) {
+      if (orderResponse.success) {
         const order = orderResponse.data;
         console.log("📦 Order extracted:", order);
+
+        // Si no hay orden, simplemente establecer estado vacío (no es un error)
+        if (!order) {
+          console.log("ℹ️ No hay orden activa para esta mesa");
+          setState((prev) => ({
+            ...prev,
+            order: null,
+            dishOrders: [],
+            activeUsers: [],
+            isSplitBillActive: false,
+            isLoading: false,
+            error: null,
+          }));
+          return;
+        }
 
         // Los items ya vienen en la respuesta de la RPC function
         const dishOrders = Array.isArray(order.items) ? order.items : [];
@@ -184,7 +201,8 @@ export function TableProvider({ children }: { children: ReactNode }) {
         setState((prev) => ({
           ...prev,
           order: null,
-          error: orderResponse.error || "No se encontró orden activa",
+          dishOrders: [],
+          error: orderResponse.error || "Error al cargar la orden",
           isLoading: false,
         }));
       }

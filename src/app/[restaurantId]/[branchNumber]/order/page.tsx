@@ -14,7 +14,7 @@ import { orderService } from "@/app/services/order.service";
 export default function OrderPage() {
   const searchParams = useSearchParams();
   const params = useParams();
-  const { state, setTableNumber, loadTableData } = useTable();
+  const { state, setTableNumber, loadTableData, loadActiveUsers } = useTable();
   const { navigateWithTable } = useTableNavigation();
   const { isAuthenticated, isLoading: authLoading, user, profile } = useAuth();
   const { guestId } = useGuest();
@@ -80,6 +80,9 @@ export default function OrderPage() {
             null, // guestId es null para usuarios autenticados
             userName
           );
+
+          // Recargar solo activeUsers (más rápido que loadTableData completo)
+          await loadActiveUsers();
         }
         navigateWithTable("/payment-options");
       } else {

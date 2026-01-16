@@ -7,8 +7,8 @@ import { useEffect } from "react";
 // Restaurant ID y Branch por defecto para testing
 // Estos valores coinciden con la orden de prueba en tap_pay_orders
 const DEFAULT_RESTAURANT_ID = 5; // Tacos Atarantados
-const DEFAULT_BRANCH_NUMBER = 1;
-const DEFAULT_TABLE = 3; // Mesa 3
+const DEFAULT_BRANCH_NUMBER = 2;
+const DEFAULT_TABLE = 1; // Mesa
 
 export default function Home() {
   const router = useRouter();
