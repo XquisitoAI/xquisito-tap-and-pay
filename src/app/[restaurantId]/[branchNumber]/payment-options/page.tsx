@@ -5,7 +5,7 @@ import { useSearchParams, useParams } from "next/navigation";
 import { useTable } from "@/app/context/TableContext";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
 import { useRestaurant } from "@/app/context/RestaurantContext";
-import MenuHeaderBack from "@/app/components/headers/MenuHeader";
+import MenuHeader from "@/app/components/headers/MenuHeader";
 import { orderService } from "@/app/services/order.service";
 import { ChevronRight, DollarSign, ReceiptText } from "lucide-react";
 import { ActiveUser } from "@/app/types/order";
@@ -179,16 +179,19 @@ export default function PaymentOptionsPage() {
   const paidDishes = dishes.filter((dish) => dish.payment_status === "paid");
 
   // Usar los totales de la orden directamente (incluye todos los métodos de pago)
-  const tableTotalPrice = state.order?.total_amount || dishes.reduce(
-    (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
-    0
-  );
+  const tableTotalPrice =
+    state.order?.total_amount ||
+    dishes.reduce(
+      (sum, dish) => sum + (dish.price + dish.extra_price) * dish.quantity,
+      0
+    );
 
   // paid_amount de la orden incluye pagos por todos los métodos
   const paidAmount = state.order?.paid_amount || 0;
 
   // remaining_amount de la orden es lo que falta por pagar
-  const unpaidAmount = state.order?.remaining_amount || tableTotalPrice - paidAmount;
+  const unpaidAmount =
+    state.order?.remaining_amount || tableTotalPrice - paidAmount;
 
   // Obtener usuarios únicos que NO hayan pagado nada
   const uniqueUsers = (() => {
@@ -293,7 +296,7 @@ export default function PaymentOptionsPage() {
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
-        <MenuHeaderBack />
+        <MenuHeader />
 
         <div className="px-4 md:px-6 lg:px-8 w-full flex-1 flex flex-col">
           <div className="left-4 right-4 bg-linear-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">
@@ -349,7 +352,7 @@ export default function PaymentOptionsPage() {
 
   return (
     <div className="min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
-      <MenuHeaderBack />
+      <MenuHeader />
 
       <div className="px-4 md:px-6 lg:px-8 w-full flex-1 flex flex-col">
         <div className="left-4 right-4 bg-linear-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">

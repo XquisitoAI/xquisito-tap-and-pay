@@ -8,7 +8,7 @@ import { usePayment } from "@/app/context/PaymentContext";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useGuest } from "@/app/context/GuestContext";
-import MenuHeaderBack from "@/app/components/headers/MenuHeader";
+import MenuHeader from "@/app/components/headers/MenuHeader";
 import OrderAnimation from "@/app/components/UI/OrderAnimation";
 import { paymentService } from "@/app/services/payment.service";
 import { Plus, Trash2, Loader2, CircleAlert, X } from "lucide-react";
@@ -491,7 +491,7 @@ export default function CardSelectionPage() {
           className="fixed top-0 left-0 right-0 z-50"
           style={{ zIndex: 999 }}
         >
-          <MenuHeaderBack />
+          <MenuHeader />
         </div>
         <div className="h-20"></div>
         <div className="w-full flex-1 flex items-center justify-center">
@@ -535,7 +535,7 @@ export default function CardSelectionPage() {
           style={{ zIndex: 999 }}
         >
           <div className={isAnimatingOut ? "animate-fade-out" : ""}>
-            <MenuHeaderBack />
+            <MenuHeader />
           </div>
         </div>
 

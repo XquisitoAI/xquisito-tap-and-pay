@@ -10,7 +10,7 @@ import { useGuest, useIsGuest } from "@/app/context/GuestContext";
 import { usePayment } from "@/app/context/PaymentContext";
 import { useEffect, useState } from "react";
 import { paymentService } from "@/app/services/payment.service";
-import MenuHeaderBack from "@/app/components/headers/MenuHeader";
+import MenuHeader from "@/app/components/headers/MenuHeader";
 import CardScanner from "@/app/components/CardScanner";
 import Loader from "@/app/components/UI/Loader";
 import { useAuth } from "@/app/context/AuthContext";
@@ -255,7 +255,7 @@ function AddCardContent() {
       )}
 
       <div className="min-h-screen bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
-        <MenuHeaderBack />
+        <MenuHeader />
 
         <div className="px-4 md:px-6 lg:px-8 w-full flex-1 flex flex-col justify-end">
           <div className="left-4 right-4 bg-linear-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">

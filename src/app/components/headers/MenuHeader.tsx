@@ -11,6 +11,7 @@ import { Restaurant } from "@/app/types/restaurant";
 interface MenuHeaderProps {
   restaurant?: Restaurant;
   tableNumber?: string;
+  showBackButton?: boolean;
 }
 
 interface UserImageData {
@@ -23,6 +24,7 @@ interface UserImageData {
 export default function MenuHeader({
   restaurant,
   tableNumber,
+  showBackButton = true,
 }: MenuHeaderProps) {
   const router = useRouter();
   const { state } = useTable();
@@ -144,12 +146,16 @@ export default function MenuHeader({
       <div className="relative flex items-center justify-between z-10">
         {/* Back */}
         <div className="flex items-center z-10">
-          <div
-            onClick={handleBack}
-            className="size-10 md:size-12 lg:size-14 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 active:scale-95 transition-transform duration-200"
-          >
-            <ChevronLeft className="text-primary size-5 md:size-6 lg:size-7" />
-          </div>
+          {showBackButton ? (
+            <div
+              onClick={handleBack}
+              className="size-10 md:size-12 lg:size-14 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 active:scale-95 transition-transform duration-200"
+            >
+              <ChevronLeft className="text-primary size-5 md:size-6 lg:size-7" />
+            </div>
+          ) : (
+            <div className="size-10 md:size-12 lg:size-14" />
+          )}
         </div>
 
         {/* Xquisito Logo */}

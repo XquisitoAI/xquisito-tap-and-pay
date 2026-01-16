@@ -2,7 +2,7 @@
 
 import { UserCircle2, LogIn } from "lucide-react";
 import { useTableNavigation } from "@/app/hooks/useTableNavigation";
-import MenuHeaderBack from "@/app/components/headers/MenuHeader";
+import MenuHeader from "@/app/components/headers/MenuHeader";
 
 export default function AuthSelectionPage() {
   const { navigateWithTable } = useTableNavigation();
@@ -14,7 +14,7 @@ export default function AuthSelectionPage() {
 
   return (
     <div className="min-h-dvh bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
-      <MenuHeaderBack />
+      <MenuHeader />
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 md:px-8 lg:px-10 pb-12 md:py-10 lg:py-12">
         <div className="w-full max-w-md">

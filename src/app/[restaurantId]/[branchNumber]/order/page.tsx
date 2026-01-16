@@ -161,6 +161,7 @@ export default function OrderPage() {
       <MenuHeader
         restaurant={restaurant || undefined}
         tableNumber={state.tableNumber}
+        showBackButton={false}
       />
 
       <div className="px-4 md:px-6 lg:px-8 w-full flex-1 flex flex-col">
