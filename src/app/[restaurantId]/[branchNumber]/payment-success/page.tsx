@@ -292,8 +292,10 @@ export default function PaymentSuccessPage() {
         />
       </div>
 
+      {/* Bottom Container */}
       <div className="px-4 md:px-6 lg:px-8 w-full animate-slide-up">
         <div className="flex-1 flex flex-col">
+          {/* Header con gradiente */}
           <div className="left-4 right-4 bg-linear-to-tl from-[#0a8b9b] to-[#1d727e] rounded-t-4xl translate-y-7 z-0">
             <div className="py-6 md:py-8 lg:py-10 px-8 md:px-10 lg:px-12 flex flex-col justify-center items-center mb-6 md:mb-8 lg:mb-10 mt-2 md:mt-4 lg:mt-6 gap-2 md:gap-3 lg:gap-4">
               <h1 className="font-medium text-white text-3xl md:text-4xl lg:text-5xl leading-7 md:leading-9 lg:leading-tight">
@@ -305,92 +307,93 @@ export default function PaymentSuccessPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-t-4xl relative z-10 flex flex-col min-h-96 justify-center px-6 md:px-8 lg:px-10 flex-1 py-8 md:py-10 lg:py-12">
-            {/* Rating Prompt */}
-            <div className="text-center mb-8 md:mb-10 lg:mb-12">
-              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-black mb-2 md:mb-3 lg:mb-4">
-                {hasRated
-                  ? "¡Gracias por tu calificación!"
-                  : "Califica tu experiencia en el restaurante"}
-              </p>
-              <div className="flex flex-col items-center gap-3 md:gap-3.5 lg:gap-4">
-                {/* Stars container */}
-                <div className="flex gap-1 md:gap-1.5 lg:gap-2">
-                  {[1, 2, 3, 4, 5].map((starIndex) => {
-                    const currentRating = hoveredRating || rating;
-                    const isFilled = currentRating >= starIndex;
+          {/* Contenedor blanco fijo al bottom */}
+          <div className="bg-white rounded-t-4xl relative z-10 flex flex-col min-h-80 justify-center px-6 md:px-8 lg:px-10 flex-1 py-8 md:py-10 lg:py-12">
+          {/* Rating Prompt */}
+          <div className="text-center mb-8 md:mb-10 lg:mb-12">
+            <p className="text-xl md:text-2xl lg:text-3xl font-medium text-black mb-2 md:mb-3 lg:mb-4">
+              {hasRated
+                ? "¡Gracias por tu calificación!"
+                : "Califica tu experiencia en el restaurante"}
+            </p>
+            <div className="flex flex-col items-center gap-3 md:gap-3.5 lg:gap-4">
+              {/* Stars container */}
+              <div className="flex gap-1 md:gap-1.5 lg:gap-2">
+                {[1, 2, 3, 4, 5].map((starIndex) => {
+                  const currentRating = hoveredRating || rating;
+                  const isFilled = currentRating >= starIndex;
 
-                    return (
-                      <div
-                        key={starIndex}
-                        className={`relative ${
-                          hasRated ? "cursor-default" : "cursor-pointer"
+                  return (
+                    <div
+                      key={starIndex}
+                      className={`relative ${
+                        hasRated ? "cursor-default" : "cursor-pointer"
+                      }`}
+                      onMouseEnter={() =>
+                        !hasRated && setHoveredRating(starIndex)
+                      }
+                      onMouseLeave={() => !hasRated && setHoveredRating(0)}
+                      onClick={() =>
+                        !hasRated && handleRatingClick(starIndex)
+                      }
+                    >
+                      {/* Estrella */}
+                      <svg
+                        className={`size-8 md:size-10 lg:size-12 transition-all ${
+                          isFilled ? "text-yellow-400" : "text-white"
                         }`}
-                        onMouseEnter={() =>
-                          !hasRated && setHoveredRating(starIndex)
-                        }
-                        onMouseLeave={() => !hasRated && setHoveredRating(0)}
-                        onClick={() =>
-                          !hasRated && handleRatingClick(starIndex)
-                        }
+                        fill="currentColor"
+                        stroke={isFilled ? "#facc15" : "black"}
+                        strokeWidth="1"
+                        viewBox="0 0 24 24"
                       >
-                        {/* Estrella */}
-                        <svg
-                          className={`size-8 md:size-10 lg:size-12 transition-all ${
-                            isFilled ? "text-yellow-400" : "text-white"
-                          }`}
-                          fill="currentColor"
-                          stroke={isFilled ? "#facc15" : "black"}
-                          strokeWidth="1"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Submit button - appears when a rating is selected */}
-                {rating > 0 && !hasRated && (
-                  <button
-                    onClick={handleSubmitRating}
-                    className="px-5 md:px-6 py-1.5 md:py-2 bg-linear-to-r from-[#34808C] to-[#173E44] hover:from-[#2a6d77] hover:to-[#12323a] text-white text-sm md:text-base font-medium rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in"
-                    aria-label="Enviar calificación"
-                  >
-                    Enviar
-                  </button>
-                )}
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div
-              className="space-y-3 md:space-y-4 lg:space-y-5"
-              style={{
-                paddingBottom: "max(0rem, env(safe-area-inset-bottom))",
-              }}
-            >
-              <button
-                onClick={handleGoHome}
-                className="w-full text-white py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-linear-to-r from-[#34808C] to-[#173E44] text-base md:text-lg lg:text-xl"
-              >
-                Volver a la orden
-              </button>
-
-              {/* Ticket btn */}
-              <button
-                onClick={() => setIsTicketModalOpen(true)}
-                className="text-base md:text-lg lg:text-xl w-full flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-black border border-black py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-white hover:bg-stone-100"
-              >
-                <Receipt
-                  className="size-5 md:size-6 lg:size-7"
-                  strokeWidth={1.5}
-                />
-                Ver ticket de compra
-              </button>
+              {/* Submit button - appears when a rating is selected */}
+              {rating > 0 && !hasRated && (
+                <button
+                  onClick={handleSubmitRating}
+                  className="px-5 md:px-6 py-1.5 md:py-2 bg-linear-to-r from-[#34808C] to-[#173E44] hover:from-[#2a6d77] hover:to-[#12323a] text-white text-sm md:text-base font-medium rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in"
+                  aria-label="Enviar calificación"
+                >
+                  Enviar
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <div
+            className="space-y-3 md:space-y-4 lg:space-y-5"
+            style={{
+              paddingBottom: "max(0rem, env(safe-area-inset-bottom))",
+            }}
+          >
+            <button
+              onClick={handleGoHome}
+              className="w-full text-white py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-linear-to-r from-[#34808C] to-[#173E44] text-base md:text-lg lg:text-xl"
+            >
+              Volver a la orden
+            </button>
+
+            {/* Ticket btn */}
+            <button
+              onClick={() => setIsTicketModalOpen(true)}
+              className="text-base md:text-lg lg:text-xl w-full flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-black border border-black py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-white hover:bg-stone-100"
+            >
+              <Receipt
+                className="size-5 md:size-6 lg:size-7"
+                strokeWidth={1.5}
+              />
+              Ver ticket de compra
+            </button>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -401,49 +404,51 @@ export default function PaymentSuccessPage() {
           onClick={() => setIsTicketModalOpen(false)}
         >
           <div
-            className="bg-[#173E44]/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] w-full mx-4 md:mx-12 lg:mx-28 rounded-4xl overflow-y-auto z-999 max-h-[85vh]"
+            className="bg-[#173E44]/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] w-full mx-4 md:mx-12 lg:mx-28 rounded-4xl z-999 max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full flex justify-end">
-              <button
-                onClick={() => setIsTicketModalOpen(false)}
-                className="p-2 md:p-3 lg:p-4 hover:bg-white/10 rounded-lg md:rounded-xl transition-colors justify-end flex items-end mt-3 md:mt-4 lg:mt-5 mr-3 md:mr-4 lg:mr-5"
-              >
-                <X className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-white" />
-              </button>
-            </div>
+            {/* Header - Fixed */}
+            <div className="shrink-0">
+              <div className="w-full flex justify-end">
+                <button
+                  onClick={() => setIsTicketModalOpen(false)}
+                  className="p-2 md:p-3 lg:p-4 hover:bg-white/10 rounded-lg md:rounded-xl transition-colors justify-end flex items-end mt-3 md:mt-4 lg:mt-5 mr-3 md:mr-4 lg:mr-5"
+                >
+                  <X className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-white" />
+                </button>
+              </div>
 
-            {/* Header */}
-            <div className="px-6 md:px-8 lg:px-10 flex items-center justify-center mb-4 md:mb-5 lg:mb-6">
-              <div className="flex flex-col justify-center items-center gap-3 md:gap-4 lg:gap-5">
-                {restaurant?.logo_url ? (
-                  <img
-                    src={restaurant.logo_url}
-                    alt={restaurant.name}
-                    className="size-20 md:size-24 lg:size-28 object-cover rounded-lg md:rounded-xl"
-                  />
-                ) : (
-                  <Receipt className="size-20 md:size-24 lg:size-28 text-white" />
-                )}
-                <div className="flex flex-col items-center justify-center">
-                  <h2 className="text-xl md:text-2xl lg:text-3xl text-white font-bold">
-                    {restaurant?.name || "Restaurante"}
-                  </h2>
-                  <p className="text-sm md:text-base lg:text-lg text-white/80">
-                    Mesa {tableNumber || "N/A"}
-                  </p>
-                  <p className="text-xs md:text-sm text-white/70 mt-1">
-                    {new Date().toLocaleTimeString("es-MX", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+              <div className="px-6 md:px-8 lg:px-10 flex items-center justify-center mb-4 md:mb-5 lg:mb-6">
+                <div className="flex flex-col justify-center items-center gap-3 md:gap-4 lg:gap-5">
+                  {restaurant?.logo_url ? (
+                    <img
+                      src={restaurant.logo_url}
+                      alt={restaurant.name}
+                      className="size-20 md:size-24 lg:size-28 object-cover rounded-lg md:rounded-xl"
+                    />
+                  ) : (
+                    <Receipt className="size-20 md:size-24 lg:size-28 text-white" />
+                  )}
+                  <div className="flex flex-col items-center justify-center">
+                    <h2 className="text-xl md:text-2xl lg:text-3xl text-white font-bold">
+                      {restaurant?.name || "Restaurante"}
+                    </h2>
+                    <p className="text-sm md:text-base lg:text-lg text-white/80">
+                      Mesa {tableNumber || "N/A"}
+                    </p>
+                    <p className="text-xs md:text-sm text-white/70 mt-1">
+                      {new Date().toLocaleTimeString("es-MX", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Content */}
-            <div className="px-6 md:px-8 lg:px-10 space-y-4 md:space-y-5 lg:space-y-6">
+            {/* Scrollable Content - Detalles del pago + Items de la orden */}
+            <div className="flex-1 overflow-y-auto px-6 md:px-8 lg:px-10">
               {/* Order Info */}
               <div className="border-t border-white/20 pt-4 md:pt-5 lg:pt-6">
                 <h3 className="font-medium text-xl md:text-2xl lg:text-3xl text-white mb-3 md:mb-4 lg:mb-5">
@@ -497,11 +502,11 @@ export default function PaymentSuccessPage() {
               {(dishOrders.length > 0 ||
                 paymentType === "choose-amount" ||
                 paymentType === "equal-shares") && (
-                <div className="border-t border-white/20 pt-4 md:pt-5 lg:pt-6">
+                <div className="border-t border-white/20 pt-4 md:pt-5 lg:pt-6 mt-4 md:mt-5 lg:mt-6">
                   <h3 className="font-medium text-xl md:text-2xl lg:text-3xl text-white mb-3 md:mb-4 lg:mb-5">
                     Items de la orden
                   </h3>
-                  <div className="space-y-3 md:space-y-4 lg:space-y-5">
+                  <div className="space-y-3 md:space-y-4 lg:space-y-5 pb-4 md:pb-5 lg:pb-6">
                     {/* Show individual items for full-bill and select-items */}
                     {dishOrders.length > 0 &&
                       dishOrders.map((dish: any, index: number) => (
@@ -521,13 +526,19 @@ export default function PaymentSuccessPage() {
                             <p className="text-white font-medium text-base md:text-lg lg:text-xl">
                               {dish.quantity}x {dish.item}
                             </p>
+                            {dish.guest_name && (
+                              <p className="text-xs md:text-sm lg:text-base text-white/60 uppercase">
+                                {dish.guest_name}
+                              </p>
+                            )}
                           </div>
                           <div className="text-right">
                             <p className="text-white font-medium text-base md:text-lg lg:text-xl">
                               $
                               {(
+                                dish.total_price ||
                                 (dish.price + (dish.extra_price || 0)) *
-                                dish.quantity
+                                  dish.quantity
                               ).toFixed(2)}{" "}
                               MXN
                             </p>
@@ -571,9 +582,11 @@ export default function PaymentSuccessPage() {
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Total Summary with Info Button */}
-              <div className="flex justify-between items-center border-t border-white/20 pt-4 md:pt-5 lg:pt-6 mb-6 md:mb-8 lg:mb-10">
+            {/* Total Summary - Fixed at bottom */}
+            <div className="shrink-0 px-6 md:px-8 lg:px-10">
+              <div className="flex justify-between items-center border-t border-white/20 pt-4 md:pt-5 lg:pt-6 pb-6 md:pb-8 lg:pb-10">
                 <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
                   <span className="text-lg md:text-xl lg:text-2xl font-medium text-white">
                     Total
