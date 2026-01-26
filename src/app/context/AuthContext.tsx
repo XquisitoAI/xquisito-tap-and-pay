@@ -67,6 +67,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "🔑 Auth token restored in AuthService from localStorage"
           );
         }
+
+        // Verificar si el token está por expirar y refrescar proactivamente
+        const expiresAt = localStorage.getItem("xquisito_expires_at");
+        if (expiresAt) {
+          const now = Math.floor(Date.now() / 1000);
+          const expiration = parseInt(expiresAt);
+          const timeUntilExpiry = expiration - now;
+
+          // Si expira en menos de 5 minutos (300 segundos), refrescar ahora
+          if (timeUntilExpiry < 300) {
+            console.log("🔄 Token expiring soon, refreshing proactively...");
+            try {
+              const refreshResponse = await authService.refreshToken();
+              if (refreshResponse.success && refreshResponse.data?.session) {
+                const newToken = refreshResponse.data.session.access_token;
+                authService.setAuthToken(newToken);
+                console.log("✅ Token refreshed proactively on app load");
+              }
+            } catch (error) {
+              console.error("❌ Failed to refresh token on load:", error);
+            }
+          }
+        }
+
         // Cargar perfil y esperar a que termine
         await loadProfile();
       }
@@ -75,6 +99,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     loadUser();
   }, []);
+
+  // Refresh token periódicamente mientras el usuario está autenticado
+  useEffect(() => {
+    if (!user) return;
+
+    // Refrescar cada 50 minutos (el token expira en 1 hora por defecto)
+    const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutos en ms
+
+    const refreshTokenPeriodically = async () => {
+      console.log("🔄 Periodic token refresh...");
+      try {
+        const refreshResponse = await authService.refreshToken();
+        if (refreshResponse.success && refreshResponse.data?.session) {
+          const newToken = refreshResponse.data.session.access_token;
+          authService.setAuthToken(newToken);
+          console.log("✅ Token refreshed periodically");
+        } else {
+          console.warn("⚠️ Periodic refresh failed:", refreshResponse.error);
+        }
+      } catch (error) {
+        console.error("❌ Error in periodic refresh:", error);
+      }
+    };
+
+    const intervalId = setInterval(refreshTokenPeriodically, REFRESH_INTERVAL);
+
+    // También refrescar cuando la app vuelve a estar visible
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible") {
+        const expiresAt = localStorage.getItem("xquisito_expires_at");
+        if (expiresAt) {
+          const now = Math.floor(Date.now() / 1000);
+          const expiration = parseInt(expiresAt);
+          const timeUntilExpiry = expiration - now;
+
+          // Si ya expiró o expira en menos de 10 minutos, refrescar
+          if (timeUntilExpiry < 600) {
+            console.log(
+              timeUntilExpiry <= 0
+                ? "⚠️ Token already expired, attempting refresh..."
+                : "🔄 Token expiring soon, refreshing..."
+            );
+
+            try {
+              const refreshResponse = await authService.refreshToken();
+              if (refreshResponse.success && refreshResponse.data?.session) {
+                const newToken = refreshResponse.data.session.access_token;
+                authService.setAuthToken(newToken);
+                console.log("✅ Token refreshed on visibility change");
+              } else {
+                // Refresh falló - el refresh token también expiró
+                console.error("❌ Refresh failed, logging out user");
+                logout();
+              }
+            } catch (error) {
+              console.error("❌ Error refreshing on visibility change:", error);
+              logout();
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
 
   const loadProfile = async () => {
     try {
