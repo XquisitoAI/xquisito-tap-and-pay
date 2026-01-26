@@ -136,7 +136,9 @@ const OrderAnimation = ({
                   <div className="flex items-center gap-3 md:gap-4">
                     <div className="size-10 md:size-12 lg:size-14 rounded-full border border-gray-400 bg-gray-100 overflow-hidden shrink-0">
                       <img
-                        src={restaurant?.logo_url || "/logos/logo-short-green.webp"}
+                        src={
+                          restaurant?.logo_url || "/logos/logo-short-green.webp"
+                        }
                         alt={displayRestaurant}
                         className="object-cover w-full h-full"
                       />
@@ -185,7 +187,7 @@ const OrderAnimation = ({
                     <p className="text-xs md:text-sm lg:text-base text-gray-500 mb-3 md:mb-4">
                       Platillos pagados
                     </p>
-                    <div className="space-y-2 md:space-y-3 lg:space-y-4 max-h-48 md:max-h-64 lg:max-h-80 overflow-y-auto">
+                    <div className="space-y-2 md:space-y-3 lg:space-y-4">
                       {displayItems.map((item, index) => (
                         <div
                           key={`${item.id}-${index}`}

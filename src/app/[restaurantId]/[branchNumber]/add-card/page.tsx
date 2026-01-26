@@ -31,6 +31,7 @@ function AddCardContent() {
   const { user, isAuthenticated } = useAuth();
 
   // Refresh payment methods on mount to ensure we have the latest data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     refreshPaymentMethods();
   }, []);
@@ -42,6 +43,12 @@ function AddCardContent() {
   const [cvv, setCvv] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [isLoadingParams, setIsLoadingParams] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleScanClick = () => {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -254,6 +261,18 @@ function AddCardContent() {
         />
       )}
 
+      {/* Toast notification */}
+      {showToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-fade-in-out">
+          <div className="bg-gray-900 text-white px-5 py-2 rounded-lg shadow-lg flex items-center gap-3">
+            <Camera className="size-6 text-gray-400" />
+            <span className="text-sm">
+              Esta función no está disponible por el momento
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-linear-to-br from-[#0a8b9b] to-[#153f43] flex flex-col">
         <MenuHeader />
 
@@ -296,7 +315,7 @@ function AddCardContent() {
               <div className="mb-6">
                 <button
                   type="button"
-                  onClick={() => setShowScanner(true)}
+                  onClick={handleScanClick}
                   className="w-full bg-black hover:bg-stone-950 text-white py-4 px-6 rounded-full font-medium cursor-pointer transition-colors flex items-center justify-center gap-3"
                 >
                   <Camera className="size-6" />

@@ -148,7 +148,7 @@ export default function UserPage() {
                   onChange={handleNameChange}
                   onKeyDown={handleKeyDown}
                   onFocus={handleInputFocus}
-                  className="w-full px-4 md:px-5 lg:px-6 py-3 md:py-4 lg:py-5 border-0 border-b border-black text-black text-2xl md:text-3xl lg:text-4xl text-center font-medium focus:outline-none focus:border-teal-500"
+                  className="w-full px-4 md:px-5 lg:px-6 py-3 md:py-4 lg:py-5 border-0 border-b-[1.3px] border-black !rounded-none text-black text-2xl md:text-3xl lg:text-4xl text-center font-medium focus:outline-none focus:border-teal-500"
                 />
               </div>
             </div>

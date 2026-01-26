@@ -80,7 +80,7 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       console.log(
-        "📦 Payment success page - checking storage for payment data"
+        "📦 Payment success page - checking storage for payment data",
       );
 
       // Get payment ID from URL to identify this specific payment
@@ -92,7 +92,7 @@ export default function PaymentSuccessPage() {
 
       // First, try to find the current payment key reference
       const currentKeyRef = sessionStorage.getItem(
-        "xquisito-current-payment-key"
+        "xquisito-current-payment-key",
       );
       if (currentKeyRef) {
         storedPayment = sessionStorage.getItem(currentKeyRef);
@@ -187,7 +187,7 @@ export default function PaymentSuccessPage() {
       // For select-items, filter only the selected items
       const selectedItemIds = paymentDetails?.selectedItems || [];
       return allDishOrders.filter((dish: any) =>
-        selectedItemIds.includes(dish.id?.toString())
+        selectedItemIds.includes(dish.id?.toString()),
       );
     } else if (paymentType === "full-bill") {
       // For full-bill, show all orders
@@ -265,7 +265,7 @@ export default function PaymentSuccessPage() {
             restaurant_id: restaurant.id,
             rating: rating,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -309,91 +309,91 @@ export default function PaymentSuccessPage() {
 
           {/* Contenedor blanco fijo al bottom */}
           <div className="bg-white rounded-t-4xl relative z-10 flex flex-col min-h-80 justify-center px-6 md:px-8 lg:px-10 flex-1 py-8 md:py-10 lg:py-12">
-          {/* Rating Prompt */}
-          <div className="text-center mb-8 md:mb-10 lg:mb-12">
-            <p className="text-xl md:text-2xl lg:text-3xl font-medium text-black mb-2 md:mb-3 lg:mb-4">
-              {hasRated
-                ? "¡Gracias por tu calificación!"
-                : "Califica tu experiencia en el restaurante"}
-            </p>
-            <div className="flex flex-col items-center gap-3 md:gap-3.5 lg:gap-4">
-              {/* Stars container */}
-              <div className="flex gap-1 md:gap-1.5 lg:gap-2">
-                {[1, 2, 3, 4, 5].map((starIndex) => {
-                  const currentRating = hoveredRating || rating;
-                  const isFilled = currentRating >= starIndex;
+            {/* Rating Prompt */}
+            <div className="text-center mb-8 md:mb-10 lg:mb-12">
+              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-black mb-2 md:mb-3 lg:mb-4">
+                {hasRated
+                  ? "¡Gracias por tu calificación!"
+                  : "Califica tu experiencia en el restaurante"}
+              </p>
+              <div className="flex flex-col items-center gap-3 md:gap-3.5 lg:gap-4">
+                {/* Stars container */}
+                <div className="flex gap-1 md:gap-1.5 lg:gap-2">
+                  {[1, 2, 3, 4, 5].map((starIndex) => {
+                    const currentRating = hoveredRating || rating;
+                    const isFilled = currentRating >= starIndex;
 
-                  return (
-                    <div
-                      key={starIndex}
-                      className={`relative ${
-                        hasRated ? "cursor-default" : "cursor-pointer"
-                      }`}
-                      onMouseEnter={() =>
-                        !hasRated && setHoveredRating(starIndex)
-                      }
-                      onMouseLeave={() => !hasRated && setHoveredRating(0)}
-                      onClick={() =>
-                        !hasRated && handleRatingClick(starIndex)
-                      }
-                    >
-                      {/* Estrella */}
-                      <svg
-                        className={`size-8 md:size-10 lg:size-12 transition-all ${
-                          isFilled ? "text-yellow-400" : "text-white"
+                    return (
+                      <div
+                        key={starIndex}
+                        className={`relative ${
+                          hasRated ? "cursor-default" : "cursor-pointer"
                         }`}
-                        fill="currentColor"
-                        stroke={isFilled ? "#facc15" : "black"}
-                        strokeWidth="1"
-                        viewBox="0 0 24 24"
+                        onMouseEnter={() =>
+                          !hasRated && setHoveredRating(starIndex)
+                        }
+                        onMouseLeave={() => !hasRated && setHoveredRating(0)}
+                        onClick={() =>
+                          !hasRated && handleRatingClick(starIndex)
+                        }
                       >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </div>
-                  );
-                })}
-              </div>
+                        {/* Estrella */}
+                        <svg
+                          className={`size-8 md:size-10 lg:size-12 transition-all ${
+                            isFilled ? "text-yellow-400" : "text-white"
+                          }`}
+                          fill="currentColor"
+                          stroke={isFilled ? "#facc15" : "black"}
+                          strokeWidth="1"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              {/* Submit button - appears when a rating is selected */}
-              {rating > 0 && !hasRated && (
-                <button
-                  onClick={handleSubmitRating}
-                  className="px-5 md:px-6 py-1.5 md:py-2 bg-linear-to-r from-[#34808C] to-[#173E44] hover:from-[#2a6d77] hover:to-[#12323a] text-white text-sm md:text-base font-medium rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in"
-                  aria-label="Enviar calificación"
-                >
-                  Enviar
-                </button>
-              )}
+                {/* Submit button - appears when a rating is selected */}
+                {rating > 0 && !hasRated && (
+                  <button
+                    onClick={handleSubmitRating}
+                    className="px-5 md:px-6 py-1.5 md:py-2 bg-linear-to-r from-[#34808C] to-[#173E44] hover:from-[#2a6d77] hover:to-[#12323a] text-white text-sm md:text-base font-medium rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in"
+                    aria-label="Enviar calificación"
+                  >
+                    Enviar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              className="space-y-3 md:space-y-4 lg:space-y-5"
+              style={{
+                paddingBottom: "max(0rem, env(safe-area-inset-bottom))",
+              }}
+            >
+              <button
+                onClick={handleGoHome}
+                className="w-full text-white py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-linear-to-r from-[#34808C] to-[#173E44] text-base md:text-lg lg:text-xl"
+              >
+                Volver a la orden
+              </button>
+
+              {/* Ticket btn */}
+              <button
+                onClick={() => setIsTicketModalOpen(true)}
+                className="text-base md:text-lg lg:text-xl w-full flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-black border border-black py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-white hover:bg-stone-100"
+              >
+                <Receipt
+                  className="size-5 md:size-6 lg:size-7"
+                  strokeWidth={1.5}
+                />
+                Ver ticket de compra
+              </button>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div
-            className="space-y-3 md:space-y-4 lg:space-y-5"
-            style={{
-              paddingBottom: "max(0rem, env(safe-area-inset-bottom))",
-            }}
-          >
-            <button
-              onClick={handleGoHome}
-              className="w-full text-white py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-linear-to-r from-[#34808C] to-[#173E44] text-base md:text-lg lg:text-xl"
-            >
-              Volver a la orden
-            </button>
-
-            {/* Ticket btn */}
-            <button
-              onClick={() => setIsTicketModalOpen(true)}
-              className="text-base md:text-lg lg:text-xl w-full flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-black border border-black py-3 md:py-4 lg:py-5 rounded-full cursor-pointer transition-colors bg-white hover:bg-stone-100"
-            >
-              <Receipt
-                className="size-5 md:size-6 lg:size-7"
-                strokeWidth={1.5}
-              />
-              Ver ticket de compra
-            </button>
-          </div>
-        </div>
         </div>
       </div>
 
@@ -404,7 +404,7 @@ export default function PaymentSuccessPage() {
           onClick={() => setIsTicketModalOpen(false)}
         >
           <div
-            className="bg-[#173E44]/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] w-full mx-4 md:mx-12 lg:mx-28 rounded-4xl z-999 max-h-[85vh] flex flex-col overflow-hidden"
+            className="bg-[#173E44]/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] w-full mx-4 md:mx-12 lg:mx-28 rounded-4xl z-999 max-h-[77vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header - Fixed */}
@@ -486,7 +486,7 @@ export default function PaymentSuccessPage() {
                         <div className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 flex items-center justify-center">
                           {getCardTypeIcon(
                             paymentDetails.cardBrand || "unknown",
-                            "small"
+                            "small",
                           )}
                         </div>
                       </div>
