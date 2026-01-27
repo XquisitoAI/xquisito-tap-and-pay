@@ -60,12 +60,26 @@ const OrderAnimation = ({
       return "";
     };
 
+    // Prevenir pull-to-refresh en Safari/iOS
+    const handleTouchMove = (e: TouchEvent) => {
+      if (window.scrollY === 0) {
+        e.preventDefault();
+      }
+    };
+
+    // Aplicar estilos al body para prevenir overscroll
+    const originalOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overscrollBehavior = "none";
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.body.style.overscrollBehavior = originalOverscrollBehavior;
     };
   }, []);
 
