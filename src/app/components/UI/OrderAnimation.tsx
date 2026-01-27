@@ -39,6 +39,36 @@ const OrderAnimation = ({
   const userImage = profile?.photoUrl;
   const hasUserImage = !!userImage;
 
+  // Prevenir recarga de página durante la animación
+  useEffect(() => {
+    // Bloquear atajos de teclado (F5, Ctrl+R, Cmd+R)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "F5" ||
+        (e.ctrlKey && e.key === "r") ||
+        (e.metaKey && e.key === "r")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Mostrar diálogo de confirmación al intentar recargar/cerrar
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   useEffect(() => {
     const contentTimer = setTimeout(() => {
       setAnimationState("content");
