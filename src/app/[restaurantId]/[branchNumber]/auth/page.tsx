@@ -290,8 +290,8 @@ export default function AuthPage() {
       const response = await updateProfile({
         firstName,
         lastName,
-        birthDate: birthDate || undefined,
-        gender: gender as "male" | "female" | "other" | undefined,
+        birthDate,
+        gender: gender as "male" | "female" | "other",
       });
 
       if (response.success) {
@@ -472,6 +472,7 @@ export default function AuthPage() {
               required
               disabled={loading}
               autoFocus
+              autoComplete="one-time-code"
             />
 
             <button
@@ -549,7 +550,7 @@ export default function AuthPage() {
             {/* Birth Date */}
             <div>
               <label className="block text-sm font-medium text-white mb-1">
-                Fecha de nacimiento (opcional)
+                Fecha de nacimiento
               </label>
               <input
                 type="date"
@@ -558,19 +559,21 @@ export default function AuthPage() {
                 max={new Date().toISOString().split("T")[0]}
                 className="h-[48px] w-full px-3 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] appearance-none"
                 disabled={loading}
+                required
               />
             </div>
 
             {/* Gender */}
             <div>
               <label className="block text-sm font-medium text-white mb-1">
-                Género (opcional)
+                Género
               </label>
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
                 className="h-[48px] w-full px-3 text-gray-600 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a8b9b] cursor-pointer appearance-none"
                 disabled={loading}
+                required
               >
                 <option value="">Selecciona...</option>
                 <option value="male">Masculino</option>
@@ -582,7 +585,7 @@ export default function AuthPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !firstName || !lastName}
+              disabled={loading || !firstName || !lastName || !birthDate || !gender}
               className="w-full bg-black hover:bg-stone-950 text-white py-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {loading ? "Guardando..." : "Continuar"}
