@@ -59,40 +59,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loadUser = async () => {
       const currentUser = authService.getCurrentUser();
       if (currentUser) {
-        setUser(currentUser);
-        // Set auth token in AuthService
+        // Set auth token in AuthService first
         if (currentUser.token) {
           authService.setAuthToken(currentUser.token);
           console.log(
-            "🔑 Auth token restored in AuthService from localStorage"
+            "🔑 Auth token restored in AuthService from localStorage",
           );
         }
 
-        // Verificar si el token está por expirar y refrescar proactivamente
+        // Verificar si el token está por expirar o ya expiró
         const expiresAt = localStorage.getItem("xquisito_expires_at");
         if (expiresAt) {
           const now = Math.floor(Date.now() / 1000);
           const expiration = parseInt(expiresAt);
           const timeUntilExpiry = expiration - now;
 
-          // Si expira en menos de 5 minutos (300 segundos), refrescar ahora
+          // Si ya expiró o expira en menos de 5 minutos, refrescar ahora
           if (timeUntilExpiry < 300) {
-            console.log("🔄 Token expiring soon, refreshing proactively...");
+            const isExpired = timeUntilExpiry <= 0;
+            console.log(
+              isExpired
+                ? "⚠️ Token already expired, attempting refresh..."
+                : "🔄 Token expiring soon, refreshing proactively...",
+            );
+
             try {
               const refreshResponse = await authService.refreshToken();
               if (refreshResponse.success && refreshResponse.data?.session) {
                 const newToken = refreshResponse.data.session.access_token;
                 authService.setAuthToken(newToken);
                 console.log("✅ Token refreshed proactively on app load");
+                // Ahora sí establecer el usuario y cargar perfil
+                setUser(currentUser);
+                await loadProfileWithValidation();
+              } else {
+                // Refresh falló - hacer logout completo
+                console.error("❌ Token refresh failed, clearing session");
+                await performLogout();
               }
             } catch (error) {
               console.error("❌ Failed to refresh token on load:", error);
+              // Error en refresh - hacer logout completo
+              await performLogout();
             }
+            setIsLoading(false);
+            return;
           }
         }
 
-        // Cargar perfil y esperar a que termine
-        await loadProfile();
+        // Token válido - establecer usuario y cargar perfil
+        setUser(currentUser);
+
+        // Cargar perfil y verificar que sea exitoso
+        const profileLoaded = await loadProfileWithValidation();
+        if (!profileLoaded) {
+          // El perfil no se pudo cargar (posiblemente token inválido)
+          console.error("❌ Failed to load profile, clearing session");
+          await performLogout();
+        }
       }
       setIsLoading(false);
     };
@@ -139,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(
               timeUntilExpiry <= 0
                 ? "⚠️ Token already expired, attempting refresh..."
-                : "🔄 Token expiring soon, refreshing..."
+                : "🔄 Token expiring soon, refreshing...",
             );
 
             try {
@@ -169,6 +193,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [user]);
+
+  // Función interna para hacer logout sin async issues
+  const performLogout = async () => {
+    await authService.logout();
+    authService.clearAuthToken();
+    authService.clearAllSessionData();
+    setUser(null);
+    setProfile(null);
+    console.log("🔐 Session cleared due to token expiration");
+  };
 
   const loadProfile = async () => {
     try {
@@ -200,6 +234,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Versión que retorna si fue exitoso (para validación en carga inicial)
+  const loadProfileWithValidation = async (): Promise<boolean> => {
+    try {
+      const response = await authService.getMyProfile();
+      console.log("📊 AuthContext loadProfile response:", response);
+
+      if (response.success && response.data) {
+        const responseData = (response as any).data;
+        const profileData =
+          responseData?.data?.profile || responseData?.profile;
+
+        if (profileData) {
+          console.log("✅ Profile loaded in AuthContext:", profileData);
+          setProfile(profileData);
+          return true;
+        } else {
+          console.warn("⚠️ No profile data found in response");
+          // No hay perfil pero la request fue exitosa - usuario nuevo
+          return true;
+        }
+      }
+
+      // Response no exitoso - posiblemente token inválido
+      console.error("❌ Profile load failed:", response.error);
+      return false;
+    } catch (error) {
+      console.error("❌ Error loading profile:", error);
+      return false;
+    }
+  };
+
   const sendOTP = async (phone: string): Promise<AuthResponse> => {
     const response = await authService.sendPhoneOTP(phone);
     return response;
@@ -207,7 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyOTP = async (
     phone: string,
-    token: string
+    token: string,
   ): Promise<AuthResponse> => {
     const response = await authService.verifyPhoneOTP(phone, token);
 
@@ -232,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const createOrUpdateProfile = async (
-    profileData: ProfileData
+    profileData: ProfileData,
   ): Promise<AuthResponse> => {
     const response = await authService.createOrUpdateProfile(profileData);
 
@@ -244,7 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (
-    updates: Partial<ProfileData>
+    updates: Partial<ProfileData>,
   ): Promise<AuthResponse> => {
     const response = await authService.updateMyProfile(updates);
 

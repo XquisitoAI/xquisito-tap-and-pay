@@ -5,7 +5,7 @@ export interface DishOrder {
   price: number;
   extra_price: number;
   total_price: number;
-  status: "pending" | "cooking" | "delivered";
+  status: "preparing" | "ready" | "delivered";
   payment_status: "not_paid" | "paid";
   images: string[];
   custom_fields: Record<string, any>;
@@ -20,7 +20,14 @@ export interface TapPayOrder {
   paid_amount: number;
   remaining_amount: number;
   payment_status: "pending" | "partial" | "paid";
-  order_status: "active" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled" | "abandoned";
+  order_status:
+    | "active"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "completed"
+    | "cancelled"
+    | "abandoned";
   is_split_active: boolean;
   split_method?: "equal-shares" | "select-items" | "choose-amount";
   number_of_splits?: number;

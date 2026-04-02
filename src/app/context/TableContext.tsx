@@ -5,12 +5,14 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { TapPayOrder, DishOrder, ActiveUser } from "../types/order";
 import { orderService } from "../services/order.service";
 import { useAuth } from "./AuthContext";
 import { useRestaurant } from "./RestaurantContext";
+import { useOrderRealtime } from "../hooks/useOrderRealtime";
 import type { PaymentType } from "../types/payment";
 
 interface TableState {
@@ -25,6 +27,7 @@ interface TableState {
 
 interface TableContextType {
   state: TableState;
+  isSocketConnected: boolean;
   setTableNumber: (tableNumber: string) => void;
   loadTableData: () => Promise<void>;
   loadOrder: () => Promise<void>;
@@ -75,6 +78,75 @@ export function TableProvider({ children }: { children: ReactNode }) {
 
   const { user } = useAuth();
   const { restaurant, params } = useRestaurant();
+
+  // Ref para acceder a loadTableData desde los handlers sin dependencias circulares
+  const loadTableDataRef = useRef<() => Promise<void>>();
+
+  // Handlers para eventos de socket en tiempo real
+  const handleOrderCreated = useCallback((order: TapPayOrder) => {
+    console.log("🔔 Real-time: Order created", order);
+    setState((prev) => ({
+      ...prev,
+      order,
+      dishOrders: Array.isArray(order.items) ? order.items : [],
+    }));
+  }, []);
+
+  const handlePaymentReceived = useCallback(() => {
+    console.log("🔔 Real-time: Payment received, refreshing...");
+    // Recargar todos los datos cuando se recibe un pago
+    loadTableDataRef.current?.();
+  }, []);
+
+  const handleDishStatusChanged = useCallback(
+    (dishId: string, status: DishOrder["status"]) => {
+      console.log("🔔 Real-time: Dish status changed", dishId, status);
+      setState((prev) => ({
+        ...prev,
+        dishOrders: prev.dishOrders.map((dish) =>
+          dish.id === dishId ? { ...dish, status } : dish
+        ),
+      }));
+    },
+    []
+  );
+
+  const handleOrderStatusChanged = useCallback(
+    (orderId: string, status: TapPayOrder["status"]) => {
+      console.log("🔔 Real-time: Order status changed", orderId, status);
+      setState((prev) => ({
+        ...prev,
+        order: prev.order ? { ...prev.order, status } : null,
+      }));
+    },
+    []
+  );
+
+  const handleOrderCompleted = useCallback((order: TapPayOrder) => {
+    console.log("🔔 Real-time: Order completed", order);
+    setState((prev) => ({
+      ...prev,
+      order,
+      dishOrders: Array.isArray(order.items) ? order.items : prev.dishOrders,
+    }));
+  }, []);
+
+  const handleFullRefresh = useCallback(() => {
+    console.log("🔔 Real-time: Full refresh requested");
+    loadTableDataRef.current?.();
+  }, []);
+
+  // Hook de real-time para escuchar eventos de socket
+  const { isSocketConnected } = useOrderRealtime({
+    tableNumber: state.tableNumber || null,
+    enabled: !!state.tableNumber && !!params?.restaurantId,
+    onOrderCreated: handleOrderCreated,
+    onPaymentReceived: handlePaymentReceived,
+    onDishStatusChanged: handleDishStatusChanged,
+    onOrderStatusChanged: handleOrderStatusChanged,
+    onOrderCompleted: handleOrderCompleted,
+    onFullRefresh: handleFullRefresh,
+  });
 
   // NO cargar automáticamente - la página llama a loadTableData cuando está lista
   // useEffect(() => {
@@ -214,6 +286,9 @@ export function TableProvider({ children }: { children: ReactNode }) {
       }));
     }
   }, [state.tableNumber, params?.restaurantId, params?.branchNumber]);
+
+  // Actualizar ref para que los handlers de socket puedan acceder
+  loadTableDataRef.current = loadTableData;
 
   // Cargar platillos de la orden
   const loadDishOrders = useCallback(async () => {
@@ -497,6 +572,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
     <TableContext.Provider
       value={{
         state,
+        isSocketConnected,
         setTableNumber,
         loadTableData,
         loadOrder,

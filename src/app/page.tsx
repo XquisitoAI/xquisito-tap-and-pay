@@ -21,56 +21,33 @@ export default function Home() {
     // Check if user just signed in/up and has context
     const storedTable = sessionStorage.getItem("pendingTableRedirect");
     const storedRestaurant = sessionStorage.getItem("pendingRestaurantId");
-    const isFromPaymentFlow = sessionStorage.getItem("signupFromPaymentFlow");
-    const isFromPaymentSuccess = sessionStorage.getItem(
-      "signupFromPaymentSuccess"
-    );
-    const isFromMenu = sessionStorage.getItem("signInFromMenu");
-    const isFromCart = sessionStorage.getItem("signupFromCart");
+    const authFromMenu = sessionStorage.getItem("authFromMenu");
+    const authFromPaymentFlow = sessionStorage.getItem("authFromPaymentFlow");
 
     // Determinar restaurantId
     const restaurantParam = searchParams.get("restaurant");
     const restaurantId =
       restaurantParam || storedRestaurant || DEFAULT_RESTAURANT_ID;
 
-    if (isAuthenticated && storedTable && isFromCart) {
-      // User signed in/up from cart (CartView), redirect to card-selection
-      sessionStorage.removeItem("signupFromCart");
+    if (isAuthenticated && storedTable && authFromPaymentFlow) {
+      // User signed in/up from cart (CartView), redirect to payment=options
+      sessionStorage.removeItem("authFromPaymentFlow");
       sessionStorage.removeItem("pendingTableRedirect");
       sessionStorage.removeItem("pendingRestaurantId");
       router.replace(
-        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/card-selection?table=${storedTable}`
+        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/payment-options?table=${storedTable}`,
       );
       return;
     }
 
-    if (isAuthenticated && storedTable && isFromMenu) {
+    if (isAuthenticated && storedTable && authFromMenu) {
       // User signed in from MenuView settings, redirect to dashboard with table
-      sessionStorage.removeItem("signInFromMenu");
+      sessionStorage.removeItem("authFromMenu");
       sessionStorage.removeItem("pendingTableRedirect");
       sessionStorage.removeItem("pendingRestaurantId");
       router.replace(
-        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/dashboard?table=${storedTable}`
+        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/dashboard?table=${storedTable}`,
       );
-      return;
-    }
-
-    if (isAuthenticated && storedTable && isFromPaymentFlow) {
-      // User signed up during payment flow, redirect to card-selection
-      sessionStorage.removeItem("pendingTableRedirect");
-      sessionStorage.removeItem("signupFromPaymentFlow");
-      sessionStorage.removeItem("pendingRestaurantId");
-      router.replace(
-        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/card-selection?table=${storedTable}`
-      );
-      return;
-    }
-
-    if (isAuthenticated && isFromPaymentSuccess) {
-      // User signed up from payment-success, redirect to dashboard
-      sessionStorage.removeItem("signupFromPaymentSuccess");
-      sessionStorage.removeItem("pendingRestaurantId");
-      router.replace(`/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/dashboard`);
       return;
     }
 
@@ -78,17 +55,17 @@ export default function Home() {
     const tableParam = searchParams.get("table");
     if (tableParam) {
       router.replace(
-        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/order?table=${tableParam}`
+        `/${restaurantId}/${DEFAULT_BRANCH_NUMBER}/order?table=${tableParam}`,
       );
       return;
     }
 
     // Default redirect
     console.log(
-      `✅ Default redirect to /${DEFAULT_RESTAURANT_ID}/${DEFAULT_BRANCH_NUMBER}/order?table=${DEFAULT_TABLE}`
+      `✅ Default redirect to /${DEFAULT_RESTAURANT_ID}/${DEFAULT_BRANCH_NUMBER}/order?table=${DEFAULT_TABLE}`,
     );
     router.replace(
-      `/${DEFAULT_RESTAURANT_ID}/${DEFAULT_BRANCH_NUMBER}/order?table=${DEFAULT_TABLE}`
+      `/${DEFAULT_RESTAURANT_ID}/${DEFAULT_BRANCH_NUMBER}/order?table=${DEFAULT_TABLE}`,
     );
   }, [router, searchParams, isAuthenticated, isLoading]);
 

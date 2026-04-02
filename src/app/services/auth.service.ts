@@ -163,16 +163,16 @@ class AuthService {
       if (data.success && data.data?.session?.access_token) {
         localStorage.setItem(
           "xquisito_access_token",
-          data.data.session.access_token
+          data.data.session.access_token,
         );
         localStorage.setItem(
           "xquisito_refresh_token",
-          data.data.session.refresh_token
+          data.data.session.refresh_token,
         );
         if (data.data.session.expires_at) {
           localStorage.setItem(
             "xquisito_expires_at",
-            data.data.session.expires_at.toString()
+            data.data.session.expires_at.toString(),
           );
         }
         localStorage.setItem("xquisito_user", JSON.stringify(data.data.user));
@@ -403,7 +403,7 @@ class AuthService {
    */
   async verifyOTPCode(
     phone: string,
-    token: string
+    token: string,
   ): Promise<VerifyOTPResponse> {
     try {
       const response = await fetch(`${API_URL}/auth/customer/verify-otp`, {
@@ -468,16 +468,16 @@ class AuthService {
       if (data.success && data.data?.session?.access_token) {
         localStorage.setItem(
           "xquisito_access_token",
-          data.data.session.access_token
+          data.data.session.access_token,
         );
         localStorage.setItem(
           "xquisito_refresh_token",
-          data.data.session.refresh_token
+          data.data.session.refresh_token,
         );
         if (data.data.session.expires_at) {
           localStorage.setItem(
             "xquisito_expires_at",
-            data.data.session.expires_at.toString()
+            data.data.session.expires_at.toString(),
           );
         }
       }
@@ -552,9 +552,8 @@ class AuthService {
     // Clear session storage
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("pendingRoomRedirect");
-      sessionStorage.removeItem("signupFromPaymentFlow");
-      sessionStorage.removeItem("signupFromPaymentSuccess");
-      sessionStorage.removeItem("signInFromMenu");
+      sessionStorage.removeItem("authFromPaymentFlow");
+      sessionStorage.removeItem("authFromMenu");
       sessionStorage.removeItem("pendingRestaurantId");
       // Clear localStorage guest data
       localStorage.removeItem("xquisito-guest-id");

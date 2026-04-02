@@ -8,7 +8,7 @@ export default function AuthSelectionPage() {
   const { navigateWithTable } = useTableNavigation();
 
   const handleContinue = () => {
-    sessionStorage.setItem("signupFromPaymentFlow", "true");
+    sessionStorage.setItem("authFromPaymentFlow", "true");
     navigateWithTable("/auth");
   };
 
